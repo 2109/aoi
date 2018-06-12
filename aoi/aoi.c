@@ -78,9 +78,9 @@ typedef struct aoi_context {
 } aoi_context_t;
 
 void
-insert_node(aoi_context_t* aoi_ctx, int xorz, linknode_t* linknode) {
+insert_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 	linklist_t* first;
-	if ( xorz == 0 ) {
+	if ( flag & FLAG_AXIS_X ) {
 		first = &aoi_ctx->linklist[0];
 	}
 	else {
@@ -101,6 +101,17 @@ insert_node(aoi_context_t* aoi_ctx, int xorz, linknode_t* linknode) {
 			first->head->prev = linknode;
 			first->head = linknode;
 		}
+	}
+}
+
+void
+remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
+	linklist_t* first;
+	if ( flag & FLAG_AXIS_X ) {
+		first = &aoi_ctx->linklist[0];
+	}
+	else {
+		first = &aoi_ctx->linklist[1];
 	}
 }
 
@@ -130,12 +141,10 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 	}
 	if ( other->inout == IN ) {
 		return;
-	} 
-	else if (other->inout == 0)
-	{
+	}
+	else if ( other->inout == 0 ) {
 		if ( flag & FLAG_AXIS_X ) {
-			if ( flag & FLAG_ENTITY )
-			{
+			if ( flag & FLAG_ENTITY ) {
 				if ( within_z_range(&self->entity->center, &other->trigger->center, other->trigger->range) < 0 )
 					return;
 			}
@@ -512,8 +521,8 @@ create_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z, en
 	aoi_object->entity->node[1].pos.x = UNLIMITED;
 	aoi_object->entity->node[1].pos.z = UNLIMITED;
 
-	insert_node(aoi_ctx, 0, &aoi_object->entity->node[0]);
-	insert_node(aoi_ctx, 1, &aoi_object->entity->node[1]);
+	insert_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->entity->node[0]);
+	insert_node(aoi_ctx, 0, &aoi_object->entity->node[1]);
 
 	shuffle_entity(aoi_ctx, aoi_object->entity, x, z);
 }
@@ -554,24 +563,32 @@ create_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z, i
 	aoi_object->trigger->node[3].pos.x = UNLIMITED;
 	aoi_object->trigger->node[3].pos.z = UNLIMITED;
 
-	insert_node(aoi_ctx, 0, &aoi_object->trigger->node[0]);
-	insert_node(aoi_ctx, 0, &aoi_object->trigger->node[2]);
+	insert_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->trigger->node[0]);
+	insert_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->trigger->node[2]);
 
-	insert_node(aoi_ctx, 1, &aoi_object->trigger->node[1]);
-	insert_node(aoi_ctx, 1, &aoi_object->trigger->node[3]);
+	insert_node(aoi_ctx, 0, &aoi_object->trigger->node[1]);
+	insert_node(aoi_ctx, 0, &aoi_object->trigger->node[3]);
 
 	shuffle_trigger(aoi_ctx, aoi_object->trigger, x, z);
-
 }
 
 void
 delete_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object) {
 	shuffle_entity(aoi_ctx, aoi_object->entity, UNLIMITED, UNLIMITED);
+
+	remove_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->entity->node[0]);
+	remove_node(aoi_ctx, 0, &aoi_object->entity->node[1]);
 }
 
 void
 delete_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object) {
 	shuffle_trigger(aoi_ctx, aoi_object->trigger, UNLIMITED, UNLIMITED);
+
+	remove_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->trigger->node[0]);
+	remove_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->trigger->node[2]);
+
+	remove_node(aoi_ctx, 0, &aoi_object->trigger->node[1]);
+	remove_node(aoi_ctx, 0, &aoi_object->trigger->node[3]);
 }
 
 void
@@ -585,19 +602,19 @@ move_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z) {
 }
 
 struct aoi_context*
-	create_aoi_ctx() {
-		struct aoi_context* aoi_ctx = malloc(sizeof( *aoi_ctx ));
-		memset(aoi_ctx, 0, sizeof( *aoi_ctx ));
-		return aoi_ctx;
-	}
+create_aoi_ctx() {
+	struct aoi_context* aoi_ctx = malloc(sizeof( *aoi_ctx ));
+	memset(aoi_ctx, 0, sizeof( *aoi_ctx ));
+	return aoi_ctx;
+}
 
 struct aoi_object*
-	create_aoi_object(struct aoi_context* aoi_ctx, int uid) {
-		struct aoi_object* object = malloc(sizeof( *object ));
-		memset(object, 0, sizeof( *object ));
-		object->uid = uid;
-		return object;
-	}
+create_aoi_object(struct aoi_context* aoi_ctx, int uid) {
+	struct aoi_object* object = malloc(sizeof( *object ));
+	memset(object, 0, sizeof( *object ));
+	object->uid = uid;
+	return object;
+}
 
 void
 foreach_aoi_entity(struct aoi_context* aoi_ctx, foreach_entity_func func, void* ud) {
