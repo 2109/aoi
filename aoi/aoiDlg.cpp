@@ -112,6 +112,7 @@ BOOL CAoiDlg::OnInitDialog()
 
 	m_aoi_ctx = create_aoi_ctx();
 	m_countor = 1;
+	m_trigger = NULL;
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -236,9 +237,17 @@ void CAoiDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 
 	CDialogEx::OnRButtonUp(nFlags, point);
-	int id = m_countor++;
-	struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
-	create_trigger(m_aoi_ctx, object, point.x, point.y, 50, OnTriggerCallback, ( void* )this);
-	m_map[id] = object;
+	if (m_trigger == NULL)
+	{
+		int id = m_countor++;
+		struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
+		create_trigger(m_aoi_ctx, object, point.x, point.y, 50, OnTriggerCallback, ( void* )this);
+		m_map[id] = object;
+		m_trigger = object;
+	}
+	else {
+		move_trigger(m_aoi_ctx, m_trigger, point.x, point.y);
+	}
+	
 	Invalidate();
 }

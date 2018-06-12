@@ -26,6 +26,7 @@ public:
 public:
 	struct aoi_context* m_aoi_ctx;
 	int m_countor;
+	struct aoi_object* m_trigger;
 	std::map<int, struct aoi_object*> m_map;
 // й╣ож
 protected:
