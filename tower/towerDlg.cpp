@@ -1,10 +1,10 @@
 
-// aoi_testDlg.cpp : 实现文件
+// towerDlg.cpp : 实现文件
 //
 
 #include "stdafx.h"
-#include "aoiApp.h"
-#include "aoiDlg.h"
+#include "tower.h"
+#include "towerDlg.h"
 #include "afxdialogex.h"
 
 #include <io.h>    
@@ -47,37 +47,32 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 
-// CAoiDlg 对话框
+// CtowerDlg 对话框
 
 
 
-CAoiDlg::CAoiDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(CAoiDlg::IDD, pParent)
+CtowerDlg::CtowerDlg(CWnd* pParent /*=NULL*/)
+	: CDialogEx(CtowerDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
-void CAoiDlg::DoDataExchange(CDataExchange* pDX)
+void CtowerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BEGIN_MESSAGE_MAP(CAoiDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CtowerDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_WM_LBUTTONUP()
-	ON_WM_RBUTTONUP()
 	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
-// CAoiDlg 消息处理程序
+// CtowerDlg 消息处理程序
 
-
-
-
-BOOL CAoiDlg::OnInitDialog()
+BOOL CtowerDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
@@ -114,33 +109,33 @@ BOOL CAoiDlg::OnInitDialog()
 	FILE * hf = _fdopen(hCrt, "w");
 	*stdout = *hf;
 
-	m_aoi_ctx = create_aoi_ctx();
+	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, 2);
 	m_countor = 1;
 
 	GetWindowRect(&m_rt);
 
-	for (int i = 0; i < 500;i++)
+	for (int i = 0; i < 500; i++)
 	{
 		CPoint pt(rand() % m_rt.right, rand() % m_rt.bottom);
 		CreateEntity(pt);
 	}
-	
-	for (int i = 0; i < 10;i++)
+
+	for (int i = 0; i < 10; i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->trigger = CreateTrigger(ctx->pos, rand() % 30 + 20);
+		ctx->id = CreateTrigger(ctx->pos, rand() % 10 + 10);
 		m_trigger_list.push_back(ctx);
 	}
-	
+
 
 	SetTimer(1, 50, NULL);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
-void CAoiDlg::OnSysCommand(UINT nID, LPARAM lParam)
+void CtowerDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
 	{
@@ -152,8 +147,13 @@ void CAoiDlg::OnSysCommand(UINT nID, LPARAM lParam)
 		CDialogEx::OnSysCommand(nID, lParam);
 	}
 }
+
+// 如果向对话框添加最小化按钮，则需要下面的代码
+//  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
+//  这将由框架自动完成。
+
 void foreach_entity_callback(int uid, int x, int z, void* ud) {
-	CAoiDlg* pDlg = (CAoiDlg*)ud;
+	CtowerDlg* pDlg = (CtowerDlg*)ud;
 
 	CClientDC dc(pDlg);
 
@@ -183,24 +183,20 @@ void foreach_trigger_callback(int uid, int x, int z, int range, void* ud) {
 	CClientDC* dc = (CClientDC*)ud;
 	dc->Ellipse(x - 5, z - 5, x + 5, z + 5);
 
-	dc->MoveTo(x - range, z - range);
-	dc->LineTo(x + range, z - range);
+	dc->MoveTo(x - range * 2, z - range * 2);
+	dc->LineTo(x + range * 2, z - range * 2);
 
-	dc->MoveTo(x - range, z + range);
-	dc->LineTo(x + range, z + range);
+	dc->MoveTo(x - range * 2, z + range * 2);
+	dc->LineTo(x + range * 2, z + range * 2);
 
-	dc->MoveTo(x - range, z - range);
-	dc->LineTo(x - range, z + range);
+	dc->MoveTo(x - range * 2, z - range * 2);
+	dc->LineTo(x - range * 2, z + range * 2);
 
-	dc->MoveTo(x + range, z - range);
-	dc->LineTo(x + range, z + range);
+	dc->MoveTo(x + range * 2, z - range * 2);
+	dc->LineTo(x + range * 2, z + range * 2);
 }
 
-// 如果向对话框添加最小化按钮，则需要下面的代码
-//  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
-//  这将由框架自动完成。
-
-void CAoiDlg::OnPaint()
+void CtowerDlg::OnPaint()
 {
 	if (IsIconic())
 	{
@@ -228,6 +224,7 @@ void CAoiDlg::OnPaint()
 
 	CBrush brush0(RGB(255, 0, 0));
 	dc.SelectObject(&brush0);
+
 	foreach_aoi_entity(m_aoi_ctx, foreach_entity_callback, this);
 
 	CBrush brush1(RGB(0, 0, 0));
@@ -237,7 +234,7 @@ void CAoiDlg::OnPaint()
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
 //显示。
-HCURSOR CAoiDlg::OnQueryDragIcon()
+HCURSOR CtowerDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
@@ -254,7 +251,7 @@ void OnEntityCallback(int self, int other, int op, void* ud) {
 }
 
 void OnTriggerCallback(int self, int other, int op, void* ud) {
-	CAoiDlg* pDlg = (CAoiDlg*)ud;
+	CtowerDlg* pDlg = (CtowerDlg*)ud;
 	if (op == 1)
 	{
 		printf("trigger:%d enter:%d\n", self, other);
@@ -266,27 +263,33 @@ void OnTriggerCallback(int self, int other, int op, void* ud) {
 	}
 }
 
-struct aoi_object* CAoiDlg::CreateEntity(CPoint& point)
+int CtowerDlg::CreateEntity(CPoint& point)
 {
-	int id = m_countor++;
-	struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
-	create_entity(m_aoi_ctx, object, point.x, point.y, OnEntityCallback, (void*)this);
-	m_map[id] = object;
-	return object;
+	int uid = m_countor++;
+	int id = create_entity(m_aoi_ctx, uid, point.x, point.y, OnEntityCallback, (void*)this);
+	m_entity_list.push_back(id);
+	return id;
 }
 
-struct aoi_object* CAoiDlg::CreateTrigger(CPoint& point,int range)
+int CtowerDlg::CreateTrigger(CPoint& point, int range)
 {
-	int id = m_countor++;
-	struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
-	create_trigger(m_aoi_ctx, object, point.x, point.y, range, OnTriggerCallback, (void*)this);
-	m_map[id] = object;
-	return object;
+	int uid = m_countor++;
+	int id = create_trigger(m_aoi_ctx, uid, point.x, point.y, range, OnTriggerCallback, (void*)this);
+	return id;
 }
 
-void CAoiDlg::UpdateTrigger()
+
+void CtowerDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	for (int i = 0; i < m_trigger_list.size();i++)
+	// TODO:  在此添加消息处理程序代码和/或调用默认值
+
+	CDialogEx::OnTimer(nIDEvent);
+	UpdateTrigger();
+}
+
+void CtowerDlg::UpdateTrigger()
+{
+	for (int i = 0; i < m_trigger_list.size(); i++)
 	{
 		TriggerCtx* ctx = m_trigger_list[i];
 		float dt = sqrt((ctx->dest.x - ctx->pos.x) * (ctx->dest.x - ctx->pos.x) + (ctx->dest.y - ctx->pos.y) * (ctx->dest.y - ctx->pos.y));
@@ -300,33 +303,9 @@ void CAoiDlg::UpdateTrigger()
 			ctx->pos.x = ctx->pos.x + (ctx->dest.x - ctx->pos.x) * ratio;
 			ctx->pos.y = ctx->pos.y + (ctx->dest.y - ctx->pos.y) * ratio;
 
-			move_trigger(m_aoi_ctx, ctx->trigger, ctx->pos.x, ctx->pos.y);
+			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y);
 
 			Invalidate();
 		}
 	}
-}
-
-void CAoiDlg::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO:  在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnLButtonUp(nFlags, point);
-}
-
-
-void CAoiDlg::OnRButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO:  在此添加消息处理程序代码和/或调用默认值
-	CDialogEx::OnRButtonUp(nFlags, point);
-}
-
-
-void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO:  在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnTimer(nIDEvent);
-	
-	UpdateTrigger();
 }

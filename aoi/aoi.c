@@ -115,9 +115,21 @@ remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 	else {
 		first = &aoi_ctx->linklist[1];
 	}
-	assert(first->head == linknode);
-	first->head = first->head->next;
-	first->head->prev = NULL;
+	
+	if (linknode->next) {
+		linknode->next->prev = linknode->prev;
+	}
+	if (linknode->prev) {
+		linknode->prev->next = linknode->next;
+	}
+	
+	if (first->head == linknode) {
+		first->head = linknode->next;
+	}
+	if (first->tail == linknode) {
+		first->tail = linknode->prev;
+	}
+
 	if (first->head == NULL)
 		first->head = first->tail = NULL;
 }
@@ -619,19 +631,19 @@ move_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z) {
 }
 
 struct aoi_context*
-	create_aoi_ctx() {
-		struct aoi_context* aoi_ctx = malloc(sizeof(*aoi_ctx));
-		memset(aoi_ctx, 0, sizeof(*aoi_ctx));
-		return aoi_ctx;
-	}
+create_aoi_ctx() {
+	struct aoi_context* aoi_ctx = malloc(sizeof(*aoi_ctx));
+	memset(aoi_ctx, 0, sizeof(*aoi_ctx));
+	return aoi_ctx;
+}
 
 struct aoi_object*
-	create_aoi_object(struct aoi_context* aoi_ctx, int uid) {
-		struct aoi_object* object = malloc(sizeof(*object));
-		memset(object, 0, sizeof(*object));
-		object->uid = uid;
-		return object;
-	}
+create_aoi_object(struct aoi_context* aoi_ctx, int uid) {
+	struct aoi_object* object = malloc(sizeof(*object));
+	memset(object, 0, sizeof(*object));
+	object->uid = uid;
+	return object;
+}
 
 void
 foreach_aoi_entity(struct aoi_context* aoi_ctx, foreach_entity_func func, void* ud) {

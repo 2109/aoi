@@ -1,5 +1,5 @@
 
-// aoi_testDlg.h : 头文件
+// towerDlg.h : 头文件
 //
 
 #pragma once
@@ -8,38 +8,38 @@ extern "C" {
 #include "aoi.h"
 }
 
-#include <map>
 #include <vector>
+#include <map>
 
 struct TriggerCtx {
 	CPoint pos;
 	CPoint dest;
-	struct aoi_object* trigger;
+	int id;
 };
-
-// CAoiDlg 对话框
-class CAoiDlg : public CDialogEx
+// CtowerDlg 对话框
+class CtowerDlg : public CDialogEx
 {
 // 构造
 public:
-	CAoiDlg(CWnd* pParent = NULL);	// 标准构造函数
+	CtowerDlg(CWnd* pParent = NULL);	// 标准构造函数
 
 // 对话框数据
-	enum { IDD = IDD_AOI_TEST_DIALOG };
+	enum { IDD = IDD_TOWER_DIALOG };
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
-	struct aoi_object* CreateEntity(CPoint& point);
-	struct aoi_object* CreateTrigger(CPoint& point,int range);
-	void UpdateTrigger();
 public:
-	struct aoi_context* m_aoi_ctx;
+	struct aoi* m_aoi_ctx;
 	int m_countor;
 	CRect m_rt;
+	std::vector<int> m_entity_list;
 	std::vector<TriggerCtx*> m_trigger_list;
-	std::map<int, struct aoi_object*> m_map;
 	std::map<int, bool> m_status;
+
+	int CreateEntity(CPoint& point);
+	int CreateTrigger(CPoint& point, int range);
+	void UpdateTrigger();
 // 实现
 protected:
 	HICON m_hIcon;
@@ -51,7 +51,5 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

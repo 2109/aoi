@@ -1,5 +1,5 @@
-#ifndef AOI_H
-#define AOI_H
+#ifndef LINK_AOI_H
+#define LINK_AOI_H
 
 
 struct aoi_context;
