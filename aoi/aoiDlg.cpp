@@ -130,7 +130,8 @@ BOOL CAoiDlg::OnInitDialog()
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->trigger = CreateTrigger(ctx->pos, rand() % 30 + 20);
+		ctx->range = rand() % 30 + 20;
+		ctx->trigger = CreateTrigger(ctx->pos, ctx->range);
 		m_trigger_list.push_back(ctx);
 	}
 	
@@ -295,14 +296,21 @@ void CAoiDlg::UpdateTrigger()
 			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		}
 		else {
+			RECT rt;
+			rt.left = ctx->pos.x - ctx->range - 10;
+			rt.top = ctx->pos.y - ctx->range - 10;
+
 			float vt = 50;
 			float ratio = (vt * 0.1f) / dt;
 			ctx->pos.x = ctx->pos.x + (ctx->dest.x - ctx->pos.x) * ratio;
 			ctx->pos.y = ctx->pos.y + (ctx->dest.y - ctx->pos.y) * ratio;
 
-			move_trigger(m_aoi_ctx, ctx->trigger, ctx->pos.x, ctx->pos.y);
+			rt.right = ctx->pos.x + ctx->range + 10;
+			rt.bottom = ctx->pos.y + ctx->range + 10;
 
-			Invalidate();
+			InvalidateRect(&rt);
+
+			move_trigger(m_aoi_ctx, ctx->trigger, ctx->pos.x, ctx->pos.y);
 		}
 	}
 }

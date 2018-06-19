@@ -303,9 +303,14 @@ void CtowerDlg::UpdateTrigger()
 			ctx->pos.x = ctx->pos.x + (ctx->dest.x - ctx->pos.x) * ratio;
 			ctx->pos.y = ctx->pos.y + (ctx->dest.y - ctx->pos.y) * ratio;
 
-			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y);
+			RECT rt;
+			rt.left = ctx->pos.x - 50;
+			rt.top = ctx->pos.y - 50;
+			rt.right = ctx->pos.x + 50;
+			rt.bottom = ctx->pos.y + 50;
+			InvalidateRect(&rt);
 
-			Invalidate();
+			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y);
 		}
 	}
 }

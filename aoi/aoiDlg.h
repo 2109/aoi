@@ -14,6 +14,7 @@ extern "C" {
 struct TriggerCtx {
 	CPoint pos;
 	CPoint dest;
+	int range;
 	struct aoi_object* trigger;
 };
 
