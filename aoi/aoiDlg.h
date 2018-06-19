@@ -9,6 +9,13 @@ extern "C" {
 }
 
 #include <map>
+#include <vector>
+
+struct TriggerCtx {
+	CPoint pos;
+	CPoint dest;
+	struct aoi_object* trigger;
+};
 
 // CAoiDlg 对话框
 class CAoiDlg : public CDialogEx
@@ -23,11 +30,17 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
+	struct aoi_object* CreateEntity(CPoint& point);
+	struct aoi_object* CreateTrigger(CPoint& point,int range);
+	void UpdateTrigger();
 public:
 	struct aoi_context* m_aoi_ctx;
 	int m_countor;
 	struct aoi_object* m_trigger;
+	struct aoi_object* m_entity;
+	std::vector<TriggerCtx*> m_trigger_list;
 	std::map<int, struct aoi_object*> m_map;
+	std::map<int, bool> m_status;
 // 实现
 protected:
 	HICON m_hIcon;
@@ -41,4 +54,5 @@ protected:
 public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
