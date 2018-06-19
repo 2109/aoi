@@ -25,18 +25,23 @@ typedef struct object {
 	int uid;
 	int id;
 	uint8_t type;
+	
+	location_t local;
+	
+	struct object* next;
 
 	union {
-		int range;
 		struct {
-			struct object* link_next;
-			struct object* link_prev;
-		} link_node;
+			int range;
+			struct object* next;
+			struct object* prev;
+		} trigger;
+		struct {
+			struct object* next;
+			struct object* prev;
+		} entity;
 	} param;
 
-	location_t local;
-	struct object* next;
-	struct object* prev;
 	callback_func func;
 	void* ud;
 } object_t;
@@ -60,15 +65,14 @@ typedef struct aoi {
 
 	uint32_t cell;
 
+	tower_t** towers;
 	uint32_t tower_x;
 	uint32_t tower_z;
-
+	
 	object_t* pool;
 	size_t max;
 
 	object_t* freelist;
-
-	tower_t** towers;
 } aoi_t;
 
 
@@ -126,8 +130,10 @@ new_object( aoi_t* aoi, int uid, int type, float x, float z) {
 	}
 	object_t* obj = aoi->freelist;
 	aoi->freelist = obj->next;
-	obj->next = obj->prev = NULL;
-	obj->param.link_node.link_prev = obj->param.link_node.link_next = NULL;
+	obj->next = NULL;
+	obj->param.entity.prev = obj->param.entity.next = NULL;
+	obj->param.trigger.prev = obj->param.trigger.next = NULL;
+	obj->param.trigger.range = 0;
 	obj->uid = uid;
 	obj->type = type;
 	obj->local.x = x;
@@ -142,34 +148,34 @@ free_object(aoi_t* aoi, object_t* obj) {
 }
 
 static inline void
-link_object(tower_t* tower, object_t* object) {
+link_entity(tower_t* tower, object_t* object) {
 	if (tower->head == NULL) {
 		tower->head = tower->tail = object;
 	}
 	else {
 		tower->tail->next = object;
-		object->param.link_node.link_prev = tower->tail;
-		object->param.link_node.link_next = NULL;
+		object->param.entity.prev = tower->tail;
+		object->param.entity.next = NULL;
 		tower->tail = object;
 	}
 }
 
 static inline void
-unlink_object(tower_t* tower, object_t* object) {
-	if (object->param.link_node.link_prev != NULL) {
-		object->param.link_node.link_prev->next = object->param.link_node.link_next;
+unlink_entity(tower_t* tower, object_t* object) {
+	if (object->param.entity.prev != NULL) {
+		object->param.entity.prev->param.entity.next = object->param.entity.next;
 	}
 	else {
-		tower->head = object->param.link_node.link_next;
+		tower->head = object->param.entity.next;
 	}
-	if (object->param.link_node.link_next != NULL) {
-		object->param.link_node.link_next->prev = object->param.link_node.link_prev;
+	if (object->param.entity.next != NULL) {
+		object->param.entity.next->param.entity.prev = object->param.entity.prev;
 	}
 	else {
-		tower->tail = object->param.link_node.link_prev;
+		tower->tail = object->param.entity.prev;
 	}
-	object->param.link_node.link_prev = NULL;
-	object->param.link_node.link_next = NULL;
+	object->param.entity.prev = NULL;
+	object->param.entity.next = NULL;
 }
 
 static inline struct object*
@@ -185,7 +191,7 @@ get_object(aoi_t* aoi, int id, int type) {
 }
 
 static inline void
-check_position(aoi_t* aoi, float x, float z) {
+assert_position(aoi_t* aoi, float x, float z) {
 	if (x < 0 || z < 0 || x > aoi->width || z > aoi->height) {
 		assert(0);
 	}
@@ -193,7 +199,7 @@ check_position(aoi_t* aoi, float x, float z) {
 
 int
 create_entity(aoi_t* aoi,int uid,float x,float z,callback_func func,void* ud) {
-	check_position(aoi, x, z);
+	assert_position(aoi, x, z);
 
 	object_t* entity = new_object(aoi, uid, TYPE_ENTITY, x, z);
 	entity->func = func;
@@ -204,7 +210,7 @@ create_entity(aoi_t* aoi,int uid,float x,float z,callback_func func,void* ud) {
 
 	tower_t* tower = &aoi->towers[(uint32_t)out.x][(uint32_t)out.z];
 
-	link_object(tower, entity);
+	link_entity(tower, entity);
 
 	khiter_t k;
 	object_t* other;
@@ -226,7 +232,7 @@ remove_entity(aoi_t* aoi,int id) {
 
 	tower_t* tower = &aoi->towers[(uint32_t)out.x][(uint32_t)out.z];
 
-	unlink_object(tower, entity);
+	unlink_entity(tower, entity);
 
 	khiter_t k;
 	object_t* other;
@@ -242,7 +248,7 @@ remove_entity(aoi_t* aoi,int id) {
 
 void
 move_entity(aoi_t* aoi, int id, float nx, float nz) {
-	check_position(aoi, nx, nz);
+	assert_position(aoi, nx, nz);
 
 	object_t* entity = get_object(aoi, id, TYPE_ENTITY);
 
@@ -259,9 +265,9 @@ move_entity(aoi_t* aoi, int id, float nx, float nz) {
 		return;
 	}
 
-	unlink_object(otower, entity);
+	unlink_entity(otower, entity);
 
-	link_object(ntower, entity);
+	link_entity(ntower, entity);
 
 	khiter_t k;
 	object_t* leave = NULL;
@@ -272,12 +278,12 @@ move_entity(aoi_t* aoi, int id, float nx, float nz) {
 		if (other->uid != entity->uid) {
 			if (leave == NULL) {
 				leave = other;
-				other->next = NULL;
-				other->prev = NULL;
+				other->param.trigger.next = NULL;
+				other->param.trigger.prev = NULL;
 			}
 			else {
-				other->prev = NULL;
-				other->next = leave;
+				other->param.trigger.prev = NULL;
+				other->param.trigger.next = leave;
 				leave = other;
 			}
 		}
@@ -285,29 +291,29 @@ move_entity(aoi_t* aoi, int id, float nx, float nz) {
 
 	hash_foreach(ntower->hash, k, other, {
 		if (other->uid != entity->uid) {
-			if (other->next != NULL || other->prev != NULL || other == leave) {
-				if (other->prev != NULL) {
-					other->prev->next = other->next;
+			if (other->param.trigger.next != NULL || other->param.trigger.prev != NULL || other == leave) {
+				if (other->param.trigger.prev != NULL) {
+					other->param.trigger.prev->param.trigger.next = other->param.trigger.next;
 				}
-				if (other->next != NULL) {
-					other->next->prev = other->prev;
+				if (other->param.trigger.next != NULL) {
+					other->param.trigger.next->param.trigger.prev = other->param.trigger.prev;
 				}
 				if (other == leave) {
-					leave = other->next;
+					leave = other->param.trigger.next;
 				}
-				other->next = other->prev = NULL;
+				other->param.trigger.next = other->param.trigger.prev = NULL;
 
 			}
 			else {
 				if (enter == NULL) {
 					enter = other;
-					other->next = NULL;
-					other->prev = NULL;
+					other->param.trigger.next = NULL;
+					other->param.trigger.prev = NULL;
 				}
 				else {
-					enter->next = enter;
-					other->prev = enter;
-					other->next = NULL;
+					enter->param.trigger.next = enter;
+					other->param.trigger.prev = enter;
+					other->param.trigger.next = NULL;
 					enter = other;
 				}
 			}
@@ -317,26 +323,26 @@ move_entity(aoi_t* aoi, int id, float nx, float nz) {
 	object_t* cursor = leave;
 	while (cursor != NULL) {
 		object_t* obj = cursor;
-		cursor = cursor->next;
+		cursor = cursor->param.trigger.next;
 		entity->func(entity->uid, obj->uid, 0, entity->ud);
-		obj->next = obj->prev = NULL;
+		obj->param.trigger.next = obj->param.trigger.prev = NULL;
 	}
 
 	cursor = enter;
 	while (cursor != NULL) {
 		object_t* obj = cursor;
-		cursor = cursor->next;
+		cursor = cursor->param.trigger.next;
 		entity->func(entity->uid, obj->uid, 1, entity->ud);
-		obj->next = obj->prev = NULL;
+		obj->param.trigger.next = obj->param.trigger.prev = NULL;
 	}
 }
 
 int
 create_trigger(aoi_t* aoi, int uid, float x, float z,int range, callback_func func, void* ud) {
-	check_position(aoi, x, z);
+	assert_position(aoi, x, z);
 
 	object_t* trigger = new_object(aoi, uid, TYPE_TRIGGER, x, z);
-	trigger->param.range = range;
+	trigger->param.trigger.range = range;
 	trigger->func = func;
 	trigger->ud = ud;
 
@@ -361,7 +367,7 @@ create_trigger(aoi_t* aoi, int uid, float x, float z,int range, callback_func fu
 				if (cursor->uid != trigger->uid) {
 					trigger->func(trigger->uid, cursor->uid, 1, trigger->ud);
 				}
-				cursor = cursor->param.link_node.link_next;
+				cursor = cursor->param.entity.next;
 			}
 		}
 	}
@@ -376,7 +382,7 @@ remove_trigger(aoi_t* aoi,int id) {
 	translate(aoi, &trigger->local, &out);
 
 	region_t region;
-	get_region(aoi, &out, &region, trigger->param.range);
+	get_region(aoi, &out, &region, trigger->param.trigger.range);
 
 	uint32_t x_index;
 	for (x_index = region.begin_x; x_index <= region.end_x; x_index++) {
@@ -392,7 +398,7 @@ remove_trigger(aoi_t* aoi,int id) {
 
 void
 move_trigger(aoi_t* aoi, int id, float nx, float nz) {
-	check_position( aoi, nx, nz);
+	assert_position( aoi, nx, nz);
 
 	object_t* trigger = get_object(aoi, id, TYPE_TRIGGER);
 
@@ -409,10 +415,10 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz) {
 	}
 
 	region_t oregion;
-	get_region(aoi, &oout, &oregion, trigger->param.range);
+	get_region(aoi, &oout, &oregion, trigger->param.trigger.range);
 
 	region_t nregion;
-	get_region(aoi, &nout, &nregion, trigger->param.range);
+	get_region(aoi, &nout, &nregion, trigger->param.trigger.range);
 
 	uint32_t x_index;
 	for (x_index = oregion.begin_x; x_index <= oregion.end_x; x_index++) {
@@ -429,7 +435,7 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz) {
 				if (cursor->uid != trigger->uid) {
 					trigger->func(trigger->uid, cursor->uid, 0, trigger->ud);
 				}
-				cursor = cursor->param.link_node.link_next;
+				cursor = cursor->param.entity.next;
 			}
 		}
 	}
@@ -449,7 +455,7 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz) {
 				if (cursor->uid != trigger->uid) {
 					trigger->func(trigger->uid, cursor->uid, 1, trigger->ud);
 				}
-				cursor = cursor->param.link_node.link_next;
+				cursor = cursor->param.entity.next;
 			}
 		}
 	}
@@ -528,7 +534,7 @@ foreach_aoi_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
 			while (cursor != NULL) {
 				object_t* entity = cursor;
 				func(entity->uid, entity->local.x, entity->local.z, ud);
-				cursor = cursor->next;
+				cursor = cursor->param.entity.next;
 			}
 		}
 	}
@@ -556,7 +562,7 @@ foreach_aoi_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 	khiter_t k;
 	object_t* trigger;
 	hash_foreach(hash, k, trigger, {
-		func(trigger->uid, trigger->local.x, trigger->local.z, trigger->param.range, ud);
+		func(trigger->uid, trigger->local.x, trigger->local.z, trigger->param.trigger.range, ud);
 	});
 	hash_free(hash);
 }
