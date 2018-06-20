@@ -524,7 +524,7 @@ create_aoi(int max, int width, int height,int cell) {
 }
 
 void
-foreach_aoi_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
+foreach_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
 	uint32_t x;
 	for (x = 0; x < aoi->tower_x; x++) {
 		uint32_t z;
@@ -541,7 +541,7 @@ foreach_aoi_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
 }
 
 void
-foreach_aoi_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
+foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 	hash_t* hash = hash_new();
 
 	uint32_t x;

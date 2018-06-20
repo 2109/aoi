@@ -21,7 +21,7 @@ int create_trigger(struct aoi* aoi, int uid, float x, float z, int range, callba
 void remove_trigger(struct aoi* aoi, int id);
 void move_trigger(struct aoi* aoi, int id, float nx, float nz);
 
-void foreach_aoi_entity(struct aoi* aoi, foreach_entity_func func, void* ud);
-void foreach_aoi_trigger(struct aoi* aoi, foreach_trigger_func func, void* ud);
+void foreach_entity(struct aoi* aoi, foreach_entity_func func, void* ud);
+void foreach_trigger(struct aoi* aoi, foreach_trigger_func func, void* ud);
 
 #endif

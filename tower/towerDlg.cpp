@@ -67,6 +67,7 @@ BEGIN_MESSAGE_MAP(CtowerDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -130,7 +131,7 @@ BOOL CtowerDlg::OnInitDialog()
 	}
 
 
-	SetTimer(1, 50, NULL);
+	SetTimer(1, 100, NULL);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -225,11 +226,11 @@ void CtowerDlg::OnPaint()
 	CBrush brush0(RGB(255, 0, 0));
 	dc.SelectObject(&brush0);
 
-	foreach_aoi_entity(m_aoi_ctx, foreach_entity_callback, this);
+	foreach_entity(m_aoi_ctx, foreach_entity_callback, this);
 
 	CBrush brush1(RGB(0, 0, 0));
 	dc.SelectObject(&brush1);
-	foreach_aoi_trigger(m_aoi_ctx, foreach_trigger_callback, &dc);
+	foreach_trigger(m_aoi_ctx, foreach_trigger_callback, &dc);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -313,4 +314,12 @@ void CtowerDlg::UpdateTrigger()
 			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y);
 		}
 	}
+}
+
+void CtowerDlg::OnClose()
+{
+	// TODO:  在此添加消息处理程序代码和/或调用默认值
+
+	CDialogEx::OnClose();
+	release_aoi(m_aoi_ctx);
 }

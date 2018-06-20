@@ -52,4 +52,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnClose();
 };
