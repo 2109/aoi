@@ -243,35 +243,31 @@ HCURSOR CAoiDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void OnEntityCallback(int self, int other, int op, void* ud) {
-	if (op == 1)
-	{
-		printf("entity:%d enter:%d\n", self, other);
-	}
-	else {
-		printf("entity:%d leave:%d\n", self, other);
-	}
-
+void OnEntityEnter(int self, int other, void* ud) {
+	printf("entity:%d enter:%d\n", self, other);
 }
 
-void OnTriggerCallback(int self, int other, int op, void* ud) {
+void OnEntityLeave(int self, int other, void* ud) {
+	printf("entity:%d leave:%d\n", self, other);
+}
+
+void OnTriggerEnter(int self, int other, void* ud) {
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
-	if (op == 1)
-	{
-		printf("trigger:%d enter:%d\n", self, other);
-		pDlg->m_status[other] = true;
-	}
-	else {
-		printf("trigger:%d leave:%d\n", self, other);
-		pDlg->m_status[other] = false;
-	}
+	printf("trigger:%d enter:%d\n", self, other);
+	pDlg->m_status[other] = true;
+}
+
+void OnTriggerLeave(int self, int other, void* ud) {
+	CAoiDlg* pDlg = (CAoiDlg*)ud;
+	printf("trigger:%d leave:%d\n", self, other);
+	pDlg->m_status[other] = false;
 }
 
 struct aoi_object* CAoiDlg::CreateEntity(CPoint& point)
 {
 	int id = m_countor++;
 	struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
-	create_entity(m_aoi_ctx, object, point.x, point.y, OnEntityCallback, (void*)this);
+	create_entity(m_aoi_ctx, object, point.x, point.y, OnEntityEnter, OnEntityLeave, ( void* )this);
 	m_map[id] = object;
 	return object;
 }
@@ -280,7 +276,7 @@ struct aoi_object* CAoiDlg::CreateTrigger(CPoint& point,int range)
 {
 	int id = m_countor++;
 	struct aoi_object* object = create_aoi_object(m_aoi_ctx, id);
-	create_trigger(m_aoi_ctx, object, point.x, point.y, range, OnTriggerCallback, (void*)this);
+	create_trigger(m_aoi_ctx, object, point.x, point.y, range, OnTriggerEnter, OnTriggerLeave, ( void* )this);
 	m_map[id] = object;
 	return object;
 }
@@ -310,7 +306,7 @@ void CAoiDlg::UpdateTrigger()
 
 			InvalidateRect(&rt);
 
-			move_trigger(m_aoi_ctx, ctx->trigger, ctx->pos.x, ctx->pos.y);
+			move_trigger(m_aoi_ctx, ctx->trigger, ctx->pos.x, ctx->pos.y, ( void* )this);
 		}
 	}
 }
