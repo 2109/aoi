@@ -19,7 +19,7 @@
 #define IN -1
 #define OUT 1
 
-//#define RESTORE_WITNESS
+#define RESTORE_WITNESS
 
 #ifdef _WIN32
 #define inline __inline
@@ -148,7 +148,7 @@ remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 
 static inline int
 within_x_range(position_t* entity, position_t* trigger, int range) {
-	if ( range > abs(entity->x - trigger->x) ) {
+	if ( range >= abs(entity->x - trigger->x) ) {
 		return 0;
 	}
 	return -1;
@@ -156,7 +156,7 @@ within_x_range(position_t* entity, position_t* trigger, int range) {
 
 static inline int
 within_z_range(position_t* entity, position_t* trigger, int range) {
-	if ( range > abs(entity->z - trigger->z) ) {
+	if ( range >= abs(entity->z - trigger->z) ) {
 		return 0;
 	}
 	return -1;
@@ -164,6 +164,7 @@ within_z_range(position_t* entity, position_t* trigger, int range) {
 
 static inline void
 link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* other, int flag) {
+	
 	if ( other->inout == IN ) {
 		return;
 	}
@@ -176,10 +177,6 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 			else {
 				if ( within_z_range(&other->entity->center, &self->trigger->center, self->trigger->range) < 0 )
 					return;
-
-				if (other->uid == 168)
-					printf("uid!:%d z:%d\n", other->uid, abs(self->trigger->center.z - other->entity->center.z));
-				
 			}
 		}
 		else {
@@ -190,9 +187,6 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 			else {
 				if ( within_x_range(&other->entity->center, &self->trigger->center, self->trigger->range) < 0 )
 					return;
-
-				if ( other->uid == 168 )
-					printf("uid!:%d z:%d\n", other->uid, abs(self->trigger->center.z - other->entity->center.z));
 			}
 		}
 	}
@@ -244,8 +238,6 @@ link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 			}
 			else {
 				if ( within_z_range(&other->entity->center, &self->trigger->ocenter, self->trigger->range) < 0 ) {
-					if ( other->uid == 168 )
-						printf("uid@:%d z:%d\n", other->uid, abs(self->trigger->ocenter.z - other->entity->center.z));
 					return;
 				}
 					
@@ -423,11 +415,11 @@ shuffle_x(aoi_context_t* aoi_ctx, linknode_t* node, int x) {
 	if ( first->head == first->tail )
 		return;
 
-	while ( node->next != NULL && node->pos.x > node->next->pos.x ) {
+	while ( node->next != NULL && node->pos.x >= node->next->pos.x ) {
 		exchange_x(aoi_ctx, first, node, node->next, -1);
 	}
 
-	while ( node->prev != NULL && node->pos.x < node->prev->pos.x ) {
+	while ( node->prev != NULL && node->pos.x <= node->prev->pos.x ) {
 		exchange_x(aoi_ctx, first, node->prev, node, 1);
 	}
 }
@@ -438,11 +430,11 @@ shuffle_z(aoi_context_t* aoi_ctx, linknode_t* node, int z) {
 	node->pos.z = z;
 	if ( first->head == first->tail )
 		return;
-	while ( node->next != NULL && node->pos.z > node->next->pos.z ) {
+	while ( node->next != NULL && node->pos.z >= node->next->pos.z ) {
 		exchange_z(aoi_ctx, first, node, node->next, -1);
 	}
 
-	while ( node->prev != NULL && node->pos.z < node->prev->pos.z ) {
+	while ( node->prev != NULL && node->pos.z <= node->prev->pos.z ) {
 		exchange_z(aoi_ctx, first, node->prev, node, 1);
 	}
 }

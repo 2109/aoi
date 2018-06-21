@@ -363,10 +363,5 @@ void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 	
 	UpdateTrigger();
-	m_timer_countor++;
-	if ( m_timer_countor > 7 )
-	{
-		KillTimer(1);
-	}
 	
 }
