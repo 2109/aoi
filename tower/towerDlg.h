@@ -36,6 +36,7 @@ public:
 	std::vector<int> m_entity_list;
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::map<int, bool> m_status;
+	TriggerCtx* m_trigger;
 
 	int CreateEntity(CPoint& point);
 	int CreateTrigger(CPoint& point, int range);
@@ -53,4 +54,5 @@ protected:
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnClose();
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 };

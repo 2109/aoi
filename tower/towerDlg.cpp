@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CtowerDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
 	ON_WM_CLOSE()
+	ON_WM_RBUTTONUP()
 END_MESSAGE_MAP()
 
 
@@ -112,6 +113,7 @@ BOOL CtowerDlg::OnInitDialog()
 
 	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, 2);
 	m_countor = 1;
+	m_trigger = NULL;
 
 	GetWindowRect(&m_rt);
 
@@ -121,7 +123,7 @@ BOOL CtowerDlg::OnInitDialog()
 		CreateEntity(pt);
 	}
 
-	for (int i = 0; i < 10; i++)
+	for ( int i = 0; i < 10; i++ )
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -240,34 +242,31 @@ HCURSOR CtowerDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void OnEntityCallback(int self, int other, int op, void* ud) {
-	if (op == 1)
-	{
-		printf("entity:%d enter:%d\n", self, other);
-	}
-	else {
-		printf("entity:%d leave:%d\n", self, other);
-	}
-
+void OnEntityEnter(int self, int other, void* ud) {
+	printf("entity:%d enter:%d\n", self, other);
 }
 
-void OnTriggerCallback(int self, int other, int op, void* ud) {
+
+void OnEntityLeave(int self, int other, void* ud) {
+	printf("entity:%d leave:%d\n", self, other);
+}
+
+void OnTriggerEnter(int self, int other, void* ud) {
 	CtowerDlg* pDlg = (CtowerDlg*)ud;
-	if (op == 1)
-	{
-		printf("trigger:%d enter:%d\n", self, other);
-		pDlg->m_status[other] = true;
-	}
-	else {
-		printf("trigger:%d leave:%d\n", self, other);
-		pDlg->m_status[other] = false;
-	}
+	printf("trigger:%d enter:%d\n", self, other);
+	pDlg->m_status[other] = true;
+}
+
+void OnTriggerLeave(int self, int other, void* ud) {
+	CtowerDlg* pDlg = (CtowerDlg*)ud;
+	printf("trigger:%d leave:%d\n", self, other);
+	pDlg->m_status[other] = false;
 }
 
 int CtowerDlg::CreateEntity(CPoint& point)
 {
 	int uid = m_countor++;
-	int id = create_entity(m_aoi_ctx, uid, point.x, point.y, OnEntityCallback, (void*)this);
+	int id = create_entity(m_aoi_ctx, uid, point.x, point.y, OnEntityEnter, ( void* )this);
 	m_entity_list.push_back(id);
 	return id;
 }
@@ -275,7 +274,7 @@ int CtowerDlg::CreateEntity(CPoint& point)
 int CtowerDlg::CreateTrigger(CPoint& point, int range)
 {
 	int uid = m_countor++;
-	int id = create_trigger(m_aoi_ctx, uid, point.x, point.y, range, OnTriggerCallback, (void*)this);
+	int id = create_trigger(m_aoi_ctx, uid, point.x, point.y, range, OnTriggerEnter, ( void* )this);
 	return id;
 }
 
@@ -311,7 +310,7 @@ void CtowerDlg::UpdateTrigger()
 			rt.bottom = ctx->pos.y + 50;
 			InvalidateRect(&rt);
 
-			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y);
+			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, OnTriggerEnter, ( void* )this, OnTriggerLeave, ( void* )this);
 		}
 	}
 }
@@ -322,4 +321,25 @@ void CtowerDlg::OnClose()
 
 	CDialogEx::OnClose();
 	release_aoi(m_aoi_ctx);
+}
+
+
+void CtowerDlg::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO:  在此添加消息处理程序代码和/或调用默认值
+
+	CDialogEx::OnRButtonUp(nFlags, point);
+	/*if (m_trigger == NULL)
+	{
+		TriggerCtx* ctx = new TriggerCtx();
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->id = CreateTrigger(ctx->pos, 10 + 10);
+		m_trigger = ctx;
+		m_trigger_list.push_back(ctx);
+	}
+	else {
+		move_trigger(m_aoi_ctx, m_trigger->id, point.x, point.y, OnTriggerEnter, ( void* )this, OnTriggerLeave, ( void* )this);
+	}
+	Invalidate();*/
 }
