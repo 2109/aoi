@@ -105,7 +105,7 @@
     <ClInclude Include="aoi.h" />
     <ClInclude Include="aoiApp.h" />
     <ClInclude Include="aoiDlg.h" />
-    <ClInclude Include="hash_set.h" />
+    <ClInclude Include="hash_witness.h" />
     <ClInclude Include="khash.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -117,7 +117,7 @@
     </ClCompile>
     <ClCompile Include="aoiApp.cpp" />
     <ClCompile Include="aoiDlg.cpp" />
-    <ClCompile Include="hash_set.c">
+    <ClCompile Include="hash_witness.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">

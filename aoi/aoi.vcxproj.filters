@@ -39,7 +39,7 @@
     <ClInclude Include="khash.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="hash_set.h">
+    <ClInclude Include="hash_witness.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,7 +56,7 @@
     <ClCompile Include="aoiApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="hash_set.c">
+    <ClCompile Include="hash_witness.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -16,7 +16,7 @@ struct aoi_object* create_aoi_object(struct aoi_context* aoi_ctx, int uid);
 int create_entity(struct aoi_context* aoi_ctx, struct aoi_object* object, int x, int z, callback_func enter_func, callback_func leave_func, void *ud);
 int create_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, int range, callback_func enter_func, callback_func leave_func, void *ud);
 
-int delete_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, void* ud);
+int delete_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int shuffle, void* ud);
 int delete_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object);
 
 void move_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, void* ud);

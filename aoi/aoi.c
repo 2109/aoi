@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "aoi.h"
-#include "hash_set.h"
+#include "hash_witness.h"
 
 #define AOI_ENTITY 		1
 #define AOI_LOW_BOUND 	2
@@ -18,6 +18,8 @@
 
 #define IN -1
 #define OUT 1
+
+//#define RESTORE_WITNESS
 
 #ifdef _WIN32
 #define inline __inline
@@ -65,7 +67,9 @@ typedef struct aoi_entity {
 	position_t center;
 	position_t ocenter;
 	linknode_t node[2];
-	hash_set_t* viewers;
+#ifdef RESTORE_WITNESS
+	hash_set_t* witness;
+#endif
 } aoi_entity_t;
 
 typedef struct aoi_trigger {
@@ -77,6 +81,8 @@ typedef struct aoi_trigger {
 
 typedef struct aoi_context {
 	linklist_t linklist[2];
+
+	aoi_object_t* freelist;
 
 	struct aoi_object* enter;
 	struct aoi_object* leave;
@@ -118,11 +124,26 @@ remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 	else {
 		first = &aoi_ctx->linklist[1];
 	}
-	assert(first->head == linknode);
-	first->head = first->head->next;
-	first->head->prev = NULL;
-	if ( first->head == NULL )
+
+	if ( first->head == first->tail ) {
+		assert(linknode == first->head);
 		first->head = first->tail = NULL;
+	}
+	else {
+		if ( linknode->prev ) {
+			linknode->prev->next = linknode->next;
+		}
+		if ( linknode->next ) {
+			linknode->next->prev = linknode->prev;
+		}
+
+		if ( linknode == first->head ) {
+			first->head = linknode->next;
+		}
+		else if ( linknode == first->tail ) {
+			first->tail = linknode->prev;
+		}
+	}
 }
 
 static inline int
@@ -143,12 +164,6 @@ within_z_range(position_t* entity, position_t* trigger, int range) {
 
 static inline void
 link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* other, int flag) {
-	/*if (flag & FLAG_AXIS_X) {
-	printf("x:enter:%d %d\n", self->uid, other->uid);
-	}
-	else {
-	printf("z:enter:%d %d\n", self->uid, other->uid);
-	}*/
 	if ( other->inout == IN ) {
 		return;
 	}
@@ -193,12 +208,6 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 
 static inline void
 link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* other, int flag) {
-	//if (flag & FLAG_AXIS_X) {
-	//	printf("x:leave:%d %d\n", self->uid, other->uid);
-	//}
-	//else {
-	//	printf("z:leave:%d %d\n", self->uid, other->uid);
-	//}
 	if ( other->inout == IN ) {
 		if ( aoi_ctx->enter == other ) {
 			aoi_ctx->enter = other->next;
@@ -441,7 +450,9 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 	aoi_object_t* cursor = aoi_ctx->enter;
 	while ( cursor ) {
 		owner->entity_enter_func(owner->uid, cursor->uid, ud);
-		hash_set_put(entity->viewers, cursor->uid);
+#ifdef RESTORE_WITNESS
+		hash_set_put(entity->witness, cursor->uid);
+#endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -453,7 +464,9 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 	cursor = aoi_ctx->leave;
 	while ( cursor ) {
 		owner->entity_leave_func(owner->uid, cursor->uid, ud);
-		hash_set_del(entity->viewers, cursor->uid);
+#ifdef RESTORE_WITNESS
+		hash_set_del(entity->witness, cursor->uid);
+#endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -492,6 +505,10 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 	aoi_object_t* cursor = aoi_ctx->enter;
 	while ( cursor ) {
 		owner->trigger_enter_func(owner->uid, cursor->uid, ud);
+#ifdef RESTORE_WITNESS
+		hash_set_put(cursor->entity->witness, owner->uid);
+#endif // RESTORE_WITNESS
+
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -503,6 +520,9 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 	cursor = aoi_ctx->leave;
 	while ( cursor ) {
 		owner->trigger_leave_func(owner->uid, cursor->uid, ud);
+#ifdef RESTORE_WITNESS
+		hash_set_del(cursor->entity->witness, owner->uid);
+#endif // RESTORE_WITNESS
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -523,8 +543,9 @@ create_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z, ca
 	aoi_object->entity_enter_func = enter_func;
 	aoi_object->entity_leave_func = leave_func;
 
-	aoi_object->entity->viewers = hash_set_new();
-
+#ifdef RESTORE_WITNESS
+	aoi_object->entity->witness = hash_set_new();
+#endif
 	aoi_object->entity->center.x = UNLIMITED;
 	aoi_object->entity->center.z = UNLIMITED;
 
@@ -598,16 +619,21 @@ create_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z, i
 }
 
 int
-delete_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, void* ud) {
+delete_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int shuffle, void* ud) {
 	if ( !aoi_object->entity ) {
 		return -1;
 	}
-	shuffle_entity(aoi_ctx, aoi_object->entity, UNLIMITED, UNLIMITED, ud);
+
+	if ( shuffle ) {
+		shuffle_entity(aoi_ctx, aoi_object->entity, UNLIMITED, UNLIMITED, ud);
+	}
 
 	remove_node(aoi_ctx, FLAG_AXIS_X, &aoi_object->entity->node[0]);
 	remove_node(aoi_ctx, 0, &aoi_object->entity->node[1]);
 
-	hash_set_free(aoi_object->entity->viewers);
+#ifdef RESTORE_WITNESS
+	hash_set_free(aoi_object->entity->witness);
+#endif
 	free(aoi_object->entity);
 	aoi_object->entity = NULL;
 
@@ -648,13 +674,34 @@ struct aoi_context*
 		return aoi_ctx;
 	}
 
+void
+release_aoi_ctx(aoi_context_t* aoi_ctx) {
+	free(aoi_ctx);
+}
+
 struct aoi_object*
-	create_aoi_object(struct aoi_context* aoi_ctx, int uid) {
-		struct aoi_object* object = malloc(sizeof( *object ));
-		memset(object, 0, sizeof( *object ));
-		object->uid = uid;
-		return object;
+create_aoi_object(aoi_context_t* aoi_ctx, int uid) {
+	aoi_object_t* object = NULL;
+	if ( aoi_ctx->freelist ) {
+		object = aoi_ctx->freelist;
+		aoi_ctx->freelist = object->next;
 	}
+	else {
+		object = malloc(sizeof( *object ));
+	}
+	memset(object, 0, sizeof( *object ));
+	object->uid = uid;
+
+	return object;
+}
+
+void
+release_aoi_object(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object) {
+	delete_trigger(aoi_ctx, aoi_object);
+	delete_entity(aoi_ctx, aoi_object, 0, NULL);
+	aoi_object->next = aoi_ctx->freelist;
+	aoi_ctx->freelist = aoi_object;
+}
 
 void
 foreach_aoi_entity(struct aoi_context* aoi_ctx, foreach_entity_func func, void* ud) {
