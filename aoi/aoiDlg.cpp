@@ -116,6 +116,7 @@ BOOL CAoiDlg::OnInitDialog()
 
 	m_aoi_ctx = create_aoi_ctx();
 	m_countor = 1;
+	m_timer_countor = 0;
 
 	GetWindowRect(&m_rt);
 
@@ -362,4 +363,10 @@ void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 	
 	UpdateTrigger();
+	m_timer_countor++;
+	if ( m_timer_countor > 7 )
+	{
+		KillTimer(1);
+	}
+	
 }

@@ -12,7 +12,10 @@ void hash_set_put(hash_set_t *self, int uid) {
 
 int hash_set_has(hash_set_t *self, int uid) {
 	khiter_t k = kh_get(uid, self, uid);
-	return k != kh_end(self);
+	if ( k < kh_end(self)) {
+		return kh_exist(self, k);
+	}
+	return 0;
 }
 
 void hash_set_del(hash_set_t *self, int uid) {

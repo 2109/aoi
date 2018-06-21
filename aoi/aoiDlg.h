@@ -41,6 +41,7 @@ public:
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::map<int, struct aoi_object*> m_map;
 	std::map<int, bool> m_status;
+	int m_timer_countor;
 // й╣ож
 protected:
 	HICON m_hIcon;

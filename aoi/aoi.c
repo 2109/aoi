@@ -148,7 +148,7 @@ remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 
 static inline int
 within_x_range(position_t* entity, position_t* trigger, int range) {
-	if ( range >= abs(entity->x - trigger->x) ) {
+	if ( range > abs(entity->x - trigger->x) ) {
 		return 0;
 	}
 	return -1;
@@ -156,7 +156,7 @@ within_x_range(position_t* entity, position_t* trigger, int range) {
 
 static inline int
 within_z_range(position_t* entity, position_t* trigger, int range) {
-	if ( range >= abs(entity->z - trigger->z) ) {
+	if ( range > abs(entity->z - trigger->z) ) {
 		return 0;
 	}
 	return -1;
@@ -176,6 +176,10 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 			else {
 				if ( within_z_range(&other->entity->center, &self->trigger->center, self->trigger->range) < 0 )
 					return;
+
+				if (other->uid == 168)
+					printf("uid!:%d z:%d\n", other->uid, abs(self->trigger->center.z - other->entity->center.z));
+				
 			}
 		}
 		else {
@@ -186,6 +190,9 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 			else {
 				if ( within_x_range(&other->entity->center, &self->trigger->center, self->trigger->range) < 0 )
 					return;
+
+				if ( other->uid == 168 )
+					printf("uid!:%d z:%d\n", other->uid, abs(self->trigger->center.z - other->entity->center.z));
 			}
 		}
 	}
@@ -236,8 +243,12 @@ link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 					return;
 			}
 			else {
-				if ( within_z_range(&other->entity->center, &self->trigger->ocenter, self->trigger->range) < 0 )
+				if ( within_z_range(&other->entity->center, &self->trigger->ocenter, self->trigger->range) < 0 ) {
+					if ( other->uid == 168 )
+						printf("uid@:%d z:%d\n", other->uid, abs(self->trigger->ocenter.z - other->entity->center.z));
 					return;
+				}
+					
 			}
 		}
 		else {
