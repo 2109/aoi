@@ -42,6 +42,9 @@
     <ClInclude Include="hash.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="hash_witness.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tower.cpp">
@@ -57,6 +60,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="hash.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="hash_witness.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

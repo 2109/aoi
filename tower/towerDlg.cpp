@@ -113,14 +113,16 @@ BOOL CtowerDlg::OnInitDialog()
 
 	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, 2);
 	m_countor = 1;
-	m_trigger = NULL;
 
 	GetWindowRect(&m_rt);
 
 	for (int i = 0; i < 500; i++)
 	{
-		CPoint pt(rand() % m_rt.right, rand() % m_rt.bottom);
-		CreateEntity(pt);
+		EntityCtx* ctx = new EntityCtx();
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->id = CreateEntity(ctx->pos);
+		m_entity_list.push_back(ctx);
 	}
 
 	for ( int i = 0; i < 10; i++ )
@@ -133,7 +135,7 @@ BOOL CtowerDlg::OnInitDialog()
 	}
 
 
-	SetTimer(1, 100, NULL);
+	SetTimer(1, 50, NULL);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -160,8 +162,8 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 
 	CClientDC dc(pDlg);
 
-	std::map<int, bool>::iterator it = pDlg->m_status.find(uid);
-	if (it != pDlg->m_status.end())
+	std::map<int, bool>::iterator it = pDlg->m_entity_status.find(uid);
+	if ( it != pDlg->m_entity_status.end() )
 	{
 		bool val = it->second;
 
@@ -243,31 +245,36 @@ HCURSOR CtowerDlg::OnQueryDragIcon()
 }
 
 void OnEntityEnter(int self, int other, void* ud) {
-	printf("entity:%d enter:%d\n", self, other);
+	//printf("entity:%d enter:%d\n", self, other);
+	CtowerDlg* pDlg = (CtowerDlg*)ud;
+	pDlg->m_trigger_status[other] = true;
+	pDlg->m_entity_status[self] = true;
 }
 
 
 void OnEntityLeave(int self, int other, void* ud) {
-	printf("entity:%d leave:%d\n", self, other);
+	//printf("entity:%d leave:%d\n", self, other);
+	CtowerDlg* pDlg = (CtowerDlg*)ud;
+	pDlg->m_trigger_status[other] = false;
+	pDlg->m_entity_status[self] = false;
 }
 
 void OnTriggerEnter(int self, int other, void* ud) {
 	CtowerDlg* pDlg = (CtowerDlg*)ud;
-	printf("trigger:%d enter:%d\n", self, other);
-	pDlg->m_status[other] = true;
+	//printf("trigger:%d enter:%d\n", self, other);
+	pDlg->m_entity_status[other] = true;
 }
 
 void OnTriggerLeave(int self, int other, void* ud) {
 	CtowerDlg* pDlg = (CtowerDlg*)ud;
-	printf("trigger:%d leave:%d\n", self, other);
-	pDlg->m_status[other] = false;
+	//printf("trigger:%d leave:%d\n", self, other);
+	pDlg->m_entity_status[other] = false;
 }
 
 int CtowerDlg::CreateEntity(CPoint& point)
 {
 	int uid = m_countor++;
 	int id = create_entity(m_aoi_ctx, uid, point.x, point.y, OnEntityEnter, ( void* )this);
-	m_entity_list.push_back(id);
 	return id;
 }
 
@@ -285,6 +292,7 @@ void CtowerDlg::OnTimer(UINT_PTR nIDEvent)
 
 	CDialogEx::OnTimer(nIDEvent);
 	UpdateTrigger();
+	//UpdateEntity();
 }
 
 void CtowerDlg::UpdateTrigger()
@@ -315,6 +323,36 @@ void CtowerDlg::UpdateTrigger()
 	}
 }
 
+void CtowerDlg::UpdateEntity()
+{
+	for ( int i = 0; i < m_entity_list.size(); i++ )
+	{
+		EntityCtx* ctx = m_entity_list[i];
+		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
+		if ( dt <= 5 )
+		{
+			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		}
+		else {
+			RECT rt;
+			rt.left = ctx->pos.x - 10;
+			rt.top = ctx->pos.y - 10;
+
+			float vt = 50;
+			float ratio = ( vt * 0.1f ) / dt;
+			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
+			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
+
+			rt.right = ctx->pos.x + 10;
+			rt.bottom = ctx->pos.y + 10;
+
+			InvalidateRect(&rt);
+
+			move_entity(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, OnEntityEnter, ( void* )this, OnEntityLeave, ( void* )this);
+		}
+	}
+}
+
 void CtowerDlg::OnClose()
 {
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
@@ -329,17 +367,4 @@ void CtowerDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 
 	CDialogEx::OnRButtonUp(nFlags, point);
-	/*if (m_trigger == NULL)
-	{
-		TriggerCtx* ctx = new TriggerCtx();
-		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->id = CreateTrigger(ctx->pos, 10 + 10);
-		m_trigger = ctx;
-		m_trigger_list.push_back(ctx);
-	}
-	else {
-		move_trigger(m_aoi_ctx, m_trigger->id, point.x, point.y, OnTriggerEnter, ( void* )this, OnTriggerLeave, ( void* )this);
-	}
-	Invalidate();*/
 }

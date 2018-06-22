@@ -7,6 +7,7 @@
 
 #include "aoi.h"
 #include "hash.h"
+#include "hash_witness.h"
 
 #ifdef _WIN32
 #define inline __inline
@@ -14,6 +15,9 @@
 
 #define TYPE_ENTITY 	0
 #define TYPE_TRIGGER  	1
+
+#define RESTORE_WITNESS
+#define RESTORE_VISIBLE
 
 typedef struct location {
 	float x;
@@ -26,6 +30,13 @@ typedef struct object {
 	uint8_t type;
 
 	location_t local;
+
+#ifdef RESTORE_WITNESS
+	hash_set_t* witness;
+#endif
+#ifdef RESTORE_VISIBLE
+	hash_set_t* visible;
+#endif
 
 	struct object* next;
 
@@ -214,11 +225,16 @@ create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) 
 
 	link_entity(tower, entity);
 
+
+	entity->witness = hash_set_new();
+
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
 		if ( other->uid != entity->uid ) {
 			func(entity->uid, other->uid, ud);
+			hash_set_put(entity->witness, other->uid, entity->uid, "entity witness");
+			hash_set_put(other->visible, entity->uid, other->uid, "trigger visible");
 		}
 	});
 
@@ -241,6 +257,7 @@ remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	hash_foreach(tower->hash, k, other, {
 		if ( other->uid != entity->uid ) {
 			func(entity->uid, other->uid, ud);
+			hash_set_del(entity->witness, other->uid, entity->uid, "entity witness");
 		}
 	});
 
@@ -328,6 +345,9 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 		cursor = cursor->param.trigger.next;
 		leave_func(entity->uid, obj->uid, leave_ud);
 		obj->param.trigger.next = obj->param.trigger.prev = NULL;
+
+		hash_set_del(entity->witness, obj->uid, entity->uid, "entity witness");
+		hash_set_del(obj->visible, entity->uid, obj->uid, "trigger visible");
 	}
 
 	cursor = enter;
@@ -336,6 +356,9 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 		cursor = cursor->param.trigger.next;
 		enter_func(entity->uid, obj->uid, enter_ud);
 		obj->param.trigger.next = obj->param.trigger.prev = NULL;
+
+		hash_set_put(entity->witness, obj->uid, entity->uid, "entity witness");
+		hash_set_put(obj->visible, entity->uid, obj->uid, "trigger visible");
 	}
 }
 
@@ -345,6 +368,7 @@ create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func
 
 	object_t* trigger = new_object(aoi, uid, TYPE_TRIGGER, x, z);
 	trigger->param.trigger.range = range;
+	trigger->visible = hash_set_new();
 
 	location_t out;
 	translate(aoi, &trigger->local, &out);
@@ -364,6 +388,10 @@ create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func
 			while ( cursor ) {
 				if ( cursor->uid != trigger->uid ) {
 					func(trigger->uid, cursor->uid, ud);
+
+					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
+
 				}
 				cursor = cursor->param.entity.next;
 			}
@@ -432,6 +460,8 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 			while ( cursor ) {
 				if ( cursor->uid != trigger->uid ) {
 					leave(trigger->uid, cursor->uid, leave_ud);
+					hash_set_del(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+					hash_set_del(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
 				}
 				cursor = cursor->param.entity.next;
 			}
@@ -452,6 +482,8 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 			while ( cursor ) {
 				if ( cursor->uid != trigger->uid ) {
 					enter(trigger->uid, cursor->uid, enter_ud);
+					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
 				}
 				cursor = cursor->param.entity.next;
 			}

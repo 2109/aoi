@@ -11,11 +11,22 @@ extern "C" {
 #include <vector>
 #include <map>
 
+#include <map>
+#include <vector>
+
 struct TriggerCtx {
+	CPoint pos;
+	CPoint dest;
+	int range;
+	int id;
+};
+
+struct EntityCtx {
 	CPoint pos;
 	CPoint dest;
 	int id;
 };
+
 // CtowerDlg 对话框
 class CtowerDlg : public CDialogEx
 {
@@ -33,14 +44,18 @@ public:
 	struct aoi* m_aoi_ctx;
 	int m_countor;
 	CRect m_rt;
-	std::vector<int> m_entity_list;
 	std::vector<TriggerCtx*> m_trigger_list;
-	std::map<int, bool> m_status;
-	TriggerCtx* m_trigger;
+	std::vector<EntityCtx*> m_entity_list;
+	std::map<int, struct aoi_object*> m_map;
+	std::map<int, bool> m_entity_status;
+	std::map<int, bool> m_trigger_status;
+	int m_timer_countor;
+
 
 	int CreateEntity(CPoint& point);
 	int CreateTrigger(CPoint& point, int range);
 	void UpdateTrigger();
+	void UpdateEntity();
 // 实现
 protected:
 	HICON m_hIcon;
