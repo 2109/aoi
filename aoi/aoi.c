@@ -20,6 +20,7 @@
 #define OUT 1
 
 #define RESTORE_WITNESS
+#define RESTORE_VISIBLE
 
 #ifdef _WIN32
 #define inline __inline
@@ -78,6 +79,9 @@ typedef struct aoi_trigger {
 	position_t ocenter;
 	linknode_t node[4];
 	int range;
+#ifdef RESTORE_VISIBLE
+	hash_set_t* visible;
+#endif
 } aoi_trigger_t;
 
 typedef struct aoi_context {
@@ -455,6 +459,9 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 #ifdef RESTORE_WITNESS
 		hash_set_put(entity->witness, cursor->uid, owner->uid);
 #endif
+#ifdef RESTORE_VISIBLE
+		hash_set_put(cursor->trigger->visible, owner->uid, cursor->uid);
+#endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -468,6 +475,9 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 		owner->entity_leave_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
 		hash_set_del(entity->witness, cursor->uid, owner->uid);
+#endif
+#ifdef RESTORE_VISIBLE
+		hash_set_del(cursor->trigger->visible, owner->uid, cursor->uid);
 #endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
@@ -508,8 +518,12 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 	while ( cursor ) {
 		owner->trigger_enter_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
-		hash_set_put(cursor->entity->witness, owner->uid,cursor->uid);
+		hash_set_put(cursor->entity->witness, owner->uid, cursor->uid);
 #endif // RESTORE_WITNESS
+		
+#ifdef RESTORE_VISIBLE
+		hash_set_put(owner->trigger->visible, cursor->uid, owner->uid);
+#endif
 
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
@@ -525,6 +539,9 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 #ifdef RESTORE_WITNESS
 		hash_set_del(cursor->entity->witness, owner->uid, cursor->uid);
 #endif // RESTORE_WITNESS
+#ifdef RESTORE_VISIBLE
+		hash_set_del(owner->trigger->visible, cursor->uid, owner->uid);
+#endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
 		tmp->next = tmp->prev = NULL;
@@ -580,6 +597,10 @@ create_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z, i
 	}
 	aoi_object->trigger = malloc(sizeof( aoi_trigger_t ));
 	memset(aoi_object->trigger, 0, sizeof( aoi_trigger_t ));
+
+#ifdef RESTORE_VISIBLE
+	aoi_object->trigger->visible = hash_set_new();
+#endif
 
 	aoi_object->trigger_enter_func = enter_func;
 	aoi_object->trigger_leave_func = leave_func;

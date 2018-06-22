@@ -126,14 +126,24 @@ BOOL CAoiDlg::OnInitDialog()
 		CreateEntity(pt);
 	}
 	
-	for (int i = 0; i < 10;i++)
+	for (int i = 0; i < 100;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->range = rand() % 30 + 20;
+		//ctx->range = 200;
 		ctx->trigger = CreateTrigger(ctx->pos, ctx->range);
 		m_trigger_list.push_back(ctx);
+	}
+
+	for ( int i = 0; i < 100; i++ )
+	{
+		EntityCtx* ctx = new EntityCtx();
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->entity = CreateEntity(ctx->pos);
+		m_entity_list.push_back(ctx);
 	}
 	
 
@@ -159,8 +169,8 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 
 	CClientDC dc(pDlg);
 
-	std::map<int, bool>::iterator it = pDlg->m_status.find(uid);
-	if (it != pDlg->m_status.end())
+	std::map<int, bool>::iterator it = pDlg->m_entity_status.find(uid);
+	if ( it != pDlg->m_entity_status.end() )
 	{
 		bool val = it->second;
 
@@ -254,23 +264,27 @@ HCURSOR CAoiDlg::OnQueryDragIcon()
 }
 
 void OnEntityEnter(int self, int other, void* ud) {
-	printf("entity:%d enter:%d\n", self, other);
+	//printf("entity:%d enter:%d\n", self, other);
+	CAoiDlg* pDlg = (CAoiDlg*)ud;
+	pDlg->m_trigger_status[other] = true;
 }
 
 void OnEntityLeave(int self, int other, void* ud) {
-	printf("entity:%d leave:%d\n", self, other);
+	//printf("entity:%d leave:%d\n", self, other);
+	CAoiDlg* pDlg = (CAoiDlg*)ud;
+	pDlg->m_trigger_status[other] = false;
 }
 
 void OnTriggerEnter(int self, int other, void* ud) {
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
 	//printf("trigger:%d enter:%d\n", self, other);
-	pDlg->m_status[other] = true;
+	pDlg->m_entity_status[other] = true;
 }
 
 void OnTriggerLeave(int self, int other, void* ud) {
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
 	//printf("trigger:%d leave:%d\n", self, other);
-	pDlg->m_status[other] = false;
+	pDlg->m_entity_status[other] = false;
 }
 
 struct aoi_object* CAoiDlg::CreateEntity(CPoint& point)
@@ -321,6 +335,36 @@ void CAoiDlg::UpdateTrigger()
 	}
 }
 
+void CAoiDlg::UpdateEntity()
+{
+	for ( int i = 0; i < m_entity_list.size(); i++ )
+	{
+		EntityCtx* ctx = m_entity_list[i];
+		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
+		if ( dt <= 5 )
+		{
+			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		}
+		else {
+			RECT rt;
+			rt.left = ctx->pos.x  - 10;
+			rt.top = ctx->pos.y - 10;
+
+			float vt = 50;
+			float ratio = ( vt * 0.1f ) / dt;
+			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
+			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
+
+			rt.right = ctx->pos.x + 10;
+			rt.bottom = ctx->pos.y + 10;
+
+			InvalidateRect(&rt);
+
+			move_entity(m_aoi_ctx, ctx->entity, ctx->pos.x, ctx->pos.y, ( void* )this);
+		}
+	}
+}
+
 void CAoiDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
@@ -346,5 +390,5 @@ void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 	
 	UpdateTrigger();
-	
+	//UpdateEntity();
 }

@@ -18,6 +18,12 @@ struct TriggerCtx {
 	struct aoi_object* trigger;
 };
 
+struct EntityCtx {
+	CPoint pos;
+	CPoint dest;
+	struct aoi_object* entity;
+};
+
 // CAoiDlg 对话框
 class CAoiDlg : public CDialogEx
 {
@@ -34,13 +40,16 @@ public:
 	struct aoi_object* CreateEntity(CPoint& point);
 	struct aoi_object* CreateTrigger(CPoint& point,int range);
 	void UpdateTrigger();
+	void UpdateEntity();
 public:
 	struct aoi_context* m_aoi_ctx;
 	int m_countor;
 	CRect m_rt;
 	std::vector<TriggerCtx*> m_trigger_list;
+	std::vector<EntityCtx*> m_entity_list;
 	std::map<int, struct aoi_object*> m_map;
-	std::map<int, bool> m_status;
+	std::map<int, bool> m_entity_status;
+	std::map<int, bool> m_trigger_status;
 	int m_timer_countor;
 // 实现
 protected:
