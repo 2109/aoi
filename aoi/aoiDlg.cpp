@@ -125,19 +125,19 @@ BOOL CAoiDlg::OnInitDialog()
 		CPoint pt(rand() % m_rt.right, rand() % m_rt.bottom);
 		CreateEntity(pt);
 	}
-	
-	for (int i = 0; i < 100;i++)
+
+	for (int i = 0; i < 1;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->range = rand() % 30 + 20;
-		//ctx->range = 200;
+		//ctx->range = rand() % 30 + 20;
+		ctx->range = 200;
 		ctx->trigger = CreateTrigger(ctx->pos, ctx->range);
 		m_trigger_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 100; i++ )
+	for ( int i = 0; i < 50; i++ )
 	{
 		EntityCtx* ctx = new EntityCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -267,12 +267,14 @@ void OnEntityEnter(int self, int other, void* ud) {
 	//printf("entity:%d enter:%d\n", self, other);
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
 	pDlg->m_trigger_status[other] = true;
+	pDlg->m_entity_status[self] = true;
 }
 
 void OnEntityLeave(int self, int other, void* ud) {
 	//printf("entity:%d leave:%d\n", self, other);
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
 	pDlg->m_trigger_status[other] = false;
+	pDlg->m_entity_status[self] = false;
 }
 
 void OnTriggerEnter(int self, int other, void* ud) {
@@ -390,5 +392,5 @@ void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 	
 	UpdateTrigger();
-	//UpdateEntity();
+	UpdateEntity();
 }

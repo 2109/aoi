@@ -457,10 +457,10 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 	while ( cursor ) {
 		owner->entity_enter_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
-		hash_set_put(entity->witness, cursor->uid, owner->uid);
+		hash_set_put(entity->witness, cursor->uid, owner->uid, "@entity witness");
 #endif
 #ifdef RESTORE_VISIBLE
-		hash_set_put(cursor->trigger->visible, owner->uid, cursor->uid);
+		hash_set_put(cursor->trigger->visible, owner->uid, cursor->uid, "@trigger visible");
 #endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
@@ -474,10 +474,10 @@ shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, int z, void*
 	while ( cursor ) {
 		owner->entity_leave_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
-		hash_set_del(entity->witness, cursor->uid, owner->uid);
+		hash_set_del(entity->witness, cursor->uid, owner->uid, "@entity witness");
 #endif
 #ifdef RESTORE_VISIBLE
-		hash_set_del(cursor->trigger->visible, owner->uid, cursor->uid);
+		hash_set_del(cursor->trigger->visible, owner->uid, cursor->uid, "@trigger visible");
 #endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;
@@ -518,11 +518,11 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 	while ( cursor ) {
 		owner->trigger_enter_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
-		hash_set_put(cursor->entity->witness, owner->uid, cursor->uid);
+		hash_set_put(cursor->entity->witness, owner->uid, cursor->uid, "!entity witness");
 #endif // RESTORE_WITNESS
 		
 #ifdef RESTORE_VISIBLE
-		hash_set_put(owner->trigger->visible, cursor->uid, owner->uid);
+		hash_set_put(owner->trigger->visible, cursor->uid, owner->uid, "!trigger visible");
 #endif
 
 		aoi_object_t* tmp = cursor;
@@ -537,10 +537,10 @@ shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int x, int z, vo
 	while ( cursor ) {
 		owner->trigger_leave_func(owner->uid, cursor->uid, ud);
 #ifdef RESTORE_WITNESS
-		hash_set_del(cursor->entity->witness, owner->uid, cursor->uid);
+		hash_set_del(cursor->entity->witness, owner->uid, cursor->uid, "!entity witness");
 #endif // RESTORE_WITNESS
 #ifdef RESTORE_VISIBLE
-		hash_set_del(owner->trigger->visible, cursor->uid, owner->uid);
+		hash_set_del(owner->trigger->visible, cursor->uid, owner->uid, "!trigger visible");
 #endif
 		aoi_object_t* tmp = cursor;
 		cursor = cursor->next;

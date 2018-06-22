@@ -17,6 +17,6 @@ typedef khash_t(uid) hash_set_t;
 		block; \
 	} \
 }
-void hash_set_put(hash_set_t *self, int, int);
+void hash_set_put(hash_set_t *self, int, int, const char* debug);
 int hash_set_has(hash_set_t *self, int);
-void hash_set_del(hash_set_t *self, int, int);
+void hash_set_del(hash_set_t *self, int, int, const char* debug);
