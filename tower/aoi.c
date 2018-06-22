@@ -301,7 +301,7 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 				other->param.trigger.prev = NULL;
 			}
 			else {
-				other->param.trigger.prev = NULL;
+				leave->param.trigger.prev = other;
 				other->param.trigger.next = leave;
 				leave = other;
 			}
@@ -321,7 +321,6 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 					leave = other->param.trigger.next;
 				}
 				other->param.trigger.next = other->param.trigger.prev = NULL;
-
 			}
 			else {
 				if ( enter == NULL ) {
@@ -330,9 +329,7 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 					other->param.trigger.prev = NULL;
 				}
 				else {
-					enter->param.trigger.next = enter;
-					other->param.trigger.prev = enter;
-					other->param.trigger.next = NULL;
+					other->param.trigger.next = enter;
 					enter = other;
 				}
 			}

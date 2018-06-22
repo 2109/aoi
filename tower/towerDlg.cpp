@@ -125,7 +125,7 @@ BOOL CtowerDlg::OnInitDialog()
 		m_entity_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 10; i++ )
+	for ( int i = 0; i < 100; i++ )
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -291,8 +291,8 @@ void CtowerDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 
 	CDialogEx::OnTimer(nIDEvent);
-	UpdateTrigger();
-	//UpdateEntity();
+	//UpdateTrigger();
+	UpdateEntity();
 }
 
 void CtowerDlg::UpdateTrigger()
