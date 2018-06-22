@@ -211,6 +211,10 @@ link_enter_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 
 static inline void
 link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* other, int flag) {
+	if (other->uid == 57)
+	{
+		int a = 1;
+	}
 	if ( other->inout == IN ) {
 		if ( aoi_ctx->enter == other ) {
 			aoi_ctx->enter = other->next;
@@ -236,7 +240,7 @@ link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 		if ( flag & FLAG_AXIS_X ) {
 			if ( flag & FLAG_ENTITY )
 			{
-				if ( dt_z_range(&self->entity->ocenter, &other->trigger->center) >= other->trigger->range )
+				if ( dt_z_range(&self->entity->ocenter, &other->trigger->center) > other->trigger->range )
 					return;
 			}
 			else {
@@ -248,7 +252,7 @@ link_leave_result(aoi_context_t* aoi_ctx, aoi_object_t* self, aoi_object_t* othe
 		else {
 			if ( flag & FLAG_ENTITY )
 			{
-				if ( dt_x_range(&self->entity->ocenter, &other->trigger->center) >= other->trigger->range )
+				if ( dt_x_range(&self->entity->ocenter, &other->trigger->center) > other->trigger->range )
 					return;
 			}
 			else {
