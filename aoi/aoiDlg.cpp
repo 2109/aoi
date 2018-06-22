@@ -126,7 +126,7 @@ BOOL CAoiDlg::OnInitDialog()
 		CreateEntity(pt);
 	}
 	
-	for (int i = 0; i < 1;i++)
+	for (int i = 0; i < 10;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -168,16 +168,12 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 		CBrush brush1(RGB(255, 0, 0));
 		CBrush brush2(RGB(255, 255, 0));
 
-		if (uid == 35 )
-		{
-			dc.SelectObject(&brush2);
-		}
-		else {
+
 			if ( val )
 				dc.SelectObject(&brush0);
 			else
 				dc.SelectObject(&brush1);
-		}
+		
 
 		
 
@@ -186,13 +182,9 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 	else{
 		CBrush brush0(RGB(255, 0, 0));
 		CBrush brush1(RGB(255, 255, 0));
-		if ( uid == 35 )
-		{
-			dc.SelectObject(&brush1);
-		}
-		else {
+	
 			dc.SelectObject(&brush0);
-		}
+		
 
 		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 	}
@@ -269,24 +261,15 @@ void OnEntityLeave(int self, int other, void* ud) {
 	printf("entity:%d leave:%d\n", self, other);
 }
 
-int count = 0;
 void OnTriggerEnter(int self, int other, void* ud) {
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
-	if (other == 35)
-	{
-		count++;
-		if ( count == 2 )
-		{
-			KillTimer(pDlg->GetSafeHwnd(),1);
-		}
-	}
-	printf("trigger:%d enter:%d\n", self, other);
+	//printf("trigger:%d enter:%d\n", self, other);
 	pDlg->m_status[other] = true;
 }
 
 void OnTriggerLeave(int self, int other, void* ud) {
 	CAoiDlg* pDlg = (CAoiDlg*)ud;
-	printf("trigger:%d leave:%d\n", self, other);
+	//printf("trigger:%d leave:%d\n", self, other);
 	pDlg->m_status[other] = false;
 }
 
