@@ -121,14 +121,14 @@ BOOL CAoiDlg::OnInitDialog()
 	GetWindowRect(&m_rt);
 
 
-	for (int i = 0; i < 1;i++)
+	for (int i = 0; i < 10;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
-		//ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->pos = CPoint(m_rt.right / 2, m_rt.bottom /2);
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		//ctx->pos = CPoint(m_rt.right / 2, m_rt.bottom /2);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		//ctx->range = rand() % 30 + 20;
-		ctx->range = 200;
+		ctx->range = rand() % 30 + 20;
+		//ctx->range = 200;
 		ctx->trigger = CreateTrigger(ctx->pos, ctx->range);
 		m_trigger_list.push_back(ctx);
 	}
