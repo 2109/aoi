@@ -120,24 +120,20 @@ BOOL CAoiDlg::OnInitDialog()
 
 	GetWindowRect(&m_rt);
 
-	for (int i = 0; i < 500;i++)
-	{
-		CPoint pt(rand() % m_rt.right, rand() % m_rt.bottom);
-		CreateEntity(pt);
-	}
 
-	for (int i = 0; i < 1;i++)
+	for (int i = 0; i < 100;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		//ctx->pos = CPoint(m_rt.right / 2, m_rt.bottom /2);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		//ctx->range = rand() % 30 + 20;
-		ctx->range = 200;
+		ctx->range = rand() % 30 + 20;
+		//ctx->range = 200;
 		ctx->trigger = CreateTrigger(ctx->pos, ctx->range);
 		m_trigger_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 50; i++ )
+	for ( int i = 0; i < 1; i++ )
 	{
 		EntityCtx* ctx = new EntityCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -349,16 +345,16 @@ void CAoiDlg::UpdateEntity()
 		}
 		else {
 			RECT rt;
-			rt.left = ctx->pos.x  - 10;
-			rt.top = ctx->pos.y - 10;
+			rt.left = ctx->pos.x  - 30;
+			rt.top = ctx->pos.y - 30;
 
-			float vt = 50;
+			float vt = 100;
 			float ratio = ( vt * 0.1f ) / dt;
 			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
 			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
 
-			rt.right = ctx->pos.x + 10;
-			rt.bottom = ctx->pos.y + 10;
+			rt.right = ctx->pos.x + 30;
+			rt.bottom = ctx->pos.y + 30;
 
 			InvalidateRect(&rt);
 
@@ -391,6 +387,6 @@ void CAoiDlg::OnTimer(UINT_PTR nIDEvent)
 
 	CDialogEx::OnTimer(nIDEvent);
 	
-	UpdateTrigger();
+	//UpdateTrigger();
 	UpdateEntity();
 }
