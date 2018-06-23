@@ -121,7 +121,7 @@ BOOL CAoiDlg::OnInitDialog()
 	GetWindowRect(&m_rt);
 
 
-	for (int i = 0; i < 10;i++)
+	for (int i = 0; i < 50;i++)
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
@@ -172,26 +172,17 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 
 		CBrush brush0(RGB(0, 255, 0));
 		CBrush brush1(RGB(255, 0, 0));
-		CBrush brush2(RGB(255, 255, 0));
 
-
-			if ( val )
-				dc.SelectObject(&brush0);
-			else
-				dc.SelectObject(&brush1);
-		
-
-		
+		if ( val )
+			dc.SelectObject(&brush0);
+		else
+			dc.SelectObject(&brush1);
 
 		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 	}
 	else{
 		CBrush brush0(RGB(255, 0, 0));
-		CBrush brush1(RGB(255, 255, 0));
-	
-			dc.SelectObject(&brush0);
-		
-
+		dc.SelectObject(&brush0);
 		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 	}
 }
@@ -305,7 +296,7 @@ struct aoi_object* CAoiDlg::CreateTrigger(CPoint& point,int range)
 
 void CAoiDlg::UpdateTrigger()
 {
-	for (int i = 0; i < m_trigger_list.size();i++)
+	for (size_t i = 0; i < m_trigger_list.size();i++)
 	{
 		TriggerCtx* ctx = m_trigger_list[i];
 		float dt = sqrt((ctx->dest.x - ctx->pos.x) * (ctx->dest.x - ctx->pos.x) + (ctx->dest.y - ctx->pos.y) * (ctx->dest.y - ctx->pos.y));
@@ -335,7 +326,7 @@ void CAoiDlg::UpdateTrigger()
 
 void CAoiDlg::UpdateEntity()
 {
-	for ( int i = 0; i < m_entity_list.size(); i++ )
+	for ( size_t i = 0; i < m_entity_list.size(); i++ )
 	{
 		EntityCtx* ctx = m_entity_list[i];
 		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
