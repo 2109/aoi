@@ -439,7 +439,21 @@ get_witness(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 			struct tile *tl = tile_withrc(ctx, z, x);
 			assert(tl != NULL);
 
-			
+			if (self->layer == LAYER_ITEM) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+			}
+			else if (self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+			}
 		}
 	}
 
@@ -449,7 +463,9 @@ get_witness(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 int
 get_visible(aoi_context_t* ctx, int id, callback_func func, void* ud) {
 	object_t* self = container_get(ctx->container, id);
-
+	if (self->layer == LAYER_ITEM) {
+		return 0;
+	}
 	struct tile *tl = tile_withpos(ctx, &self->locat);
 	assert(tl != NULL);
 
@@ -463,7 +479,17 @@ get_visible(aoi_context_t* ctx, int id, callback_func func, void* ud) {
 			struct tile *tl = tile_withrc(ctx, z, x);
 			assert(tl != NULL);
 
+			if (self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
 
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, func, ud);
+			}
 		}
 	}
 
