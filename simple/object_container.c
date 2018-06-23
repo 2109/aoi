@@ -47,6 +47,33 @@ container_create(int max) {
 	return container;
 }
 
+static void
+container_resize(struct object_container* container) {
+	int nsize = container->size * 2;
+
+	void** omgr = container->mgr;
+	container->mgr = malloc(sizeof(*container->mgr) * nsize);
+	memset(container->mgr, 0, sizeof(*container->mgr) * nsize);
+	memcpy(container->mgr, omgr, container->size * sizeof(*container->mgr));
+	free(omgr);
+
+	struct object_sot* oslots = container->slots;
+	container->slots = malloc(sizeof(*container->slots) * nsize);
+	memset(container->slots, 0, sizeof(*container->slots) * nsize);
+	memcpy(container->slots, oslots, container->size * sizeof(*container->slots));
+	free(oslots);
+
+	int i;
+	for (i = container->size; i < nsize; i++) {
+		struct object_sot* slot = &container->slots[i];
+		slot->index = i;
+		slot->next = container->freelist;
+		container->freelist = slot;
+	}
+
+	container->size = nsize;
+}
+
 void
 container_release(struct object_container* container) {
 	free(container->mgr);
@@ -75,8 +102,9 @@ container_foreach(struct object_container* container,foreach_func func,void* ud)
 
 int
 container_add(struct object_container* container,void* object) {
-	if (!container->freelist)
-		return -1;
+	if (!container->freelist) {
+		container_resize(container);
+	}
 
 	struct object_sot* slot = container->freelist;
 	container->freelist = slot->next;
