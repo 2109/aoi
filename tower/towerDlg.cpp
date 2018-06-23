@@ -111,7 +111,7 @@ BOOL CtowerDlg::OnInitDialog()
 	FILE * hf = _fdopen(hCrt, "w");
 	*stdout = *hf;
 
-	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, 2);
+	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, 10);
 	m_countor = 1;
 
 	GetWindowRect(&m_rt);
@@ -125,12 +125,14 @@ BOOL CtowerDlg::OnInitDialog()
 		m_entity_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 100; i++ )
+	for ( int i = 0; i < 2; i++ )
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		//ctx->pos = CPoint(m_rt.right/2, m_rt.bottom/2);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->id = CreateTrigger(ctx->pos, rand() % 10 + 10);
+		//ctx->id = CreateTrigger(ctx->pos, 100);
 		m_trigger_list.push_back(ctx);
 	}
 
@@ -169,36 +171,59 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 
 		CBrush brush0(RGB(0, 255, 0));
 		CBrush brush1(RGB(255, 0, 0));
+		CBrush brush2(RGB(255, 255, 0));
 
-		if (val)
-			dc.SelectObject(&brush0);
-		else
-			dc.SelectObject(&brush1);
+		if (uid == 390)
+		{
+			dc.SelectObject(&brush2);
+		}
+		else{
+			if ( val )
+				dc.SelectObject(&brush0);
+			else
+				dc.SelectObject(&brush1);
+		}
+			
+		
+		
 
 		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 	}
 	else{
 		CBrush brush0(RGB(255, 0, 0));
-		dc.SelectObject(&brush0);
+		CBrush brush1(RGB(255, 255, 0));
+		if ( uid == 390 )
+		{
+			dc.SelectObject(&brush1);
+		}
+		else
+			dc.SelectObject(&brush0);
 		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 	}
 }
 
 void foreach_trigger_callback(int uid, int x, int z, int range, void* ud) {
 	CClientDC* dc = (CClientDC*)ud;
+	CPen pen1(PS_DOT, 1, RGB(255, 0, 0));
+	CPen pen2(PS_SOLID, 1, RGB(255, 0, 0));
+	
+	int cell = 10;
+
+	dc->SelectObject(&pen2);
+
 	dc->Ellipse(x - 5, z - 5, x + 5, z + 5);
 
-	dc->MoveTo(x - range * 2, z - range * 2);
-	dc->LineTo(x + range * 2, z - range * 2);
+	dc->MoveTo(x - range * cell, z - range * cell);
+	dc->LineTo(x + range * cell, z - range * cell);
 
-	dc->MoveTo(x - range * 2, z + range * 2);
-	dc->LineTo(x + range * 2, z + range * 2);
+	dc->MoveTo(x - range * cell, z + range * cell);
+	dc->LineTo(x + range * cell, z + range * cell);
 
-	dc->MoveTo(x - range * 2, z - range * 2);
-	dc->LineTo(x - range * 2, z + range * 2);
+	dc->MoveTo(x - range * cell, z - range * cell);
+	dc->LineTo(x - range * cell, z + range * cell);
 
-	dc->MoveTo(x + range * 2, z - range * 2);
-	dc->LineTo(x + range * 2, z + range * 2);
+	dc->MoveTo(x + range * cell, z - range * cell);
+	dc->LineTo(x + range * cell, z + range * cell);
 }
 
 void CtowerDlg::OnPaint()
@@ -291,7 +316,7 @@ void CtowerDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 
 	CDialogEx::OnTimer(nIDEvent);
-	//UpdateTrigger();
+	UpdateTrigger();
 	UpdateEntity();
 }
 
@@ -312,10 +337,10 @@ void CtowerDlg::UpdateTrigger()
 			ctx->pos.y = ctx->pos.y + (ctx->dest.y - ctx->pos.y) * ratio;
 
 			RECT rt;
-			rt.left = ctx->pos.x - 50;
-			rt.top = ctx->pos.y - 50;
-			rt.right = ctx->pos.x + 50;
-			rt.bottom = ctx->pos.y + 50;
+			rt.left = ctx->pos.x - 300;
+			rt.top = ctx->pos.y - 300;
+			rt.right = ctx->pos.x + 300;
+			rt.bottom = ctx->pos.y + 300;
 			InvalidateRect(&rt);
 
 			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, OnTriggerEnter, ( void* )this, OnTriggerLeave, ( void* )this);

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "aoi.h"
 #include "hash.h"
@@ -62,7 +63,6 @@ typedef struct region {
 
 typedef struct tower {
 	struct object* head;
-	struct object* tail;
 	hash_t* hash;
 } tower_t;
 
@@ -166,13 +166,13 @@ free_object(aoi_t* aoi, object_t* obj) {
 static inline void
 link_entity(tower_t* tower, object_t* object) {
 	if ( tower->head == NULL ) {
-		tower->head = tower->tail = object;
+		tower->head = object;
 	}
 	else {
-		tower->tail->next = object;
-		object->param.entity.prev = tower->tail;
-		object->param.entity.next = NULL;
-		tower->tail = object;
+		tower->head->param.entity.prev = object;
+		object->param.entity.prev = NULL;
+		object->param.entity.next = tower->head;
+		tower->head = object;
 	}
 }
 
@@ -186,9 +186,6 @@ unlink_entity(tower_t* tower, object_t* object) {
 	}
 	if ( object->param.entity.next != NULL ) {
 		object->param.entity.next->param.entity.prev = object->param.entity.prev;
-	}
-	else {
-		tower->tail = object->param.entity.prev;
 	}
 	object->param.entity.prev = NULL;
 	object->param.entity.next = NULL;
@@ -310,7 +307,7 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 
 	hash_foreach(ntower->hash, k, other, {
 		if ( other->uid != entity->uid ) {
-			if ( other->param.trigger.next != NULL || other->param.trigger.prev != NULL || other == leave ) {
+			if ( other->param.trigger.next != NULL || other->param.trigger.prev != NULL || other == leave) {
 				if ( other->param.trigger.prev != NULL ) {
 					other->param.trigger.prev->param.trigger.next = other->param.trigger.next;
 				}
@@ -465,6 +462,7 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 		}
 	}
 
+
 	for ( x_index = nregion.begin_x; x_index <= nregion.end_x; x_index++ ) {
 		uint32_t z_index;
 		for ( z_index = nregion.begin_z; z_index <= nregion.end_z; z_index++ ) {
@@ -543,7 +541,7 @@ create_aoi(int max, int width, int height, int cell) {
 		uint32_t z;
 		for ( z = 0; z < aoi_ctx->tower_z; z++ ) {
 			tower_t* tower = &aoi_ctx->towers[x][z];
-			tower->head = tower->tail = NULL;
+			tower->head = NULL;
 			tower->hash = hash_new();
 		}
 	}
