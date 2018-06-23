@@ -67,17 +67,20 @@ BEGIN_MESSAGE_MAP(CsimpleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
 // CsimpleDlg 消息处理程序
 
 void OnAOIEnter(int self, int other, void* ud) {
-
+	CsimpleDlg* pDlg = (CsimpleDlg*)ud;
+	pDlg->m_entity_status[other] = true;
 }
 
 void OnAOILeave(int self, int other, void* ud) {
-
+	CsimpleDlg* pDlg = (CsimpleDlg*)ud;
+	pDlg->m_entity_status[other] = false;
 }
 
 BOOL CsimpleDlg::OnInitDialog()
@@ -131,7 +134,7 @@ BOOL CsimpleDlg::OnInitDialog()
 		ctx->pos = CPoint(rand() % (m_rt.right - 1), rand() % (m_rt.bottom-1));
 		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
-		m_entity_list[ctx->id] = ctx;
+		m_entity_list[id] = ctx;
 	}
 
 	for ( int i = 0; i < 3; i++ )
@@ -141,8 +144,10 @@ BOOL CsimpleDlg::OnInitDialog()
 		ctx->pos = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
-		m_trigger_list[ctx->id] = ctx;
+		m_trigger_list[id] = ctx;
 	}
+
+	m_entity_status.clear();
 
 	SetTimer(1, 50, NULL);
 
@@ -167,7 +172,7 @@ void CsimpleDlg::OnSysCommand(UINT nID, LPARAM lParam)
 //  这将由框架自动完成。
 
 
-void ForeachObject(int uid, void* object, void* ud) {
+void ForeachObject(int uid, float x,float z, void* ud) {
 	CsimpleDlg* pDlg = (CsimpleDlg*)ud;
 	CClientDC dc(pDlg);
 
@@ -185,19 +190,18 @@ void ForeachObject(int uid, void* object, void* ud) {
 
 			CBrush brush0(RGB(0, 255, 0));
 			CBrush brush1(RGB(255, 0, 0));
-			CBrush brush2(RGB(255, 255, 0));
 
 			if ( val )
 				dc.SelectObject(&brush0);
 			else
 				dc.SelectObject(&brush1);
 			
-			dc.Ellipse(object->pos.x - 5, object->pos.y - 5, object->pos.x + 5, object->pos.y + 5);
+			dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 		}
 		else{
 			CBrush brush0(RGB(255, 0, 0));
 			dc.SelectObject(&brush0);
-			dc.Ellipse(object->pos.x - 5, object->pos.y - 5, object->pos.x + 5, object->pos.y + 5);
+			dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 		}
 	}
 	else {
@@ -207,10 +211,8 @@ void ForeachObject(int uid, void* object, void* ud) {
 		CPen pen(PS_DOT, 1, RGB(255, 0, 0));
 		dc.SelectObject(&pen);
 
-		dc.Ellipse(object->pos.x - 5, object->pos.y - 5, object->pos.x + 5, object->pos.y + 5);
+		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
 		
-		float x = object->pos.x;
-		float z = object->pos.y;
 		dc.MoveTo(x - pDlg->m_range * pDlg->m_cell, z - pDlg->m_range * pDlg->m_cell);
 		dc.LineTo(x + pDlg->m_range * pDlg->m_cell, z - pDlg->m_range * pDlg->m_cell);
 
@@ -325,4 +327,13 @@ void CsimpleDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 
 	UpdateTrigger();
+}
+
+
+void CsimpleDlg::OnClose()
+{
+	// TODO:  在此添加消息处理程序代码和/或调用默认值
+
+	CDialogEx::OnClose();
+	aoi_release(m_aoi_ctx);
 }

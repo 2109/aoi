@@ -42,7 +42,6 @@ public:
 
 	std::map<int, bool> m_entity_status;
 	std::map<int, bool> m_trigger_status;
-	int m_timer_countor;
 
 	void UpdateTrigger();
 	void UpdateEntity();
@@ -59,4 +58,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnClose();
 };

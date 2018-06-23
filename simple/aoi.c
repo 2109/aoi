@@ -127,18 +127,24 @@ static inline void
 tile_pop(struct tile* tl, int level, object_t* object) {
 	link_list_t* list = tile_level(tl, level);
 
-	if ( object->prev ) {
-		object->prev->next = object->next;
+	if ( list->head == list->tail ) {
+		assert(object == list->head);
+		list->head = list->tail = NULL;
 	}
-	if ( object->next ) {
-		object->next->prev = object->prev;
-	}
+	else {
+		if ( object->prev ) {
+			object->prev->next = object->next;
+		}
+		if ( object->next ) {
+			object->next->prev = object->prev;
+		}
 
-	if ( object == list->head ) {
-		list->head = object->next;
-	}
-	else if ( object == list->tail ) {
-		list->tail = object->prev;
+		if ( object == list->head ) {
+			list->head = object->next;
+		}
+		else if ( object == list->tail ) {
+			list->tail = object->prev;
+		}
 	}
 }
 
@@ -425,8 +431,23 @@ get_viewlist(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 	return 0;
 }
 
+struct foreach_param {
+	forearch_func func;
+	void* ud;
+};
+
 void
-forearch_object(aoi_context_t* ctx, foreach_func func, void* ud) {
-	container_foreach(ctx->container, func, ud);
+foreach_callback(int id, object_t* object, void* ud) {
+	struct foreach_param* param = ud;
+	param->func(object->uid, object->locat.x, object->locat.z, param->ud);
 }
+
+void
+forearch_object(aoi_context_t* ctx, forearch_func func, void* ud) {
+	struct foreach_param param;
+	param.func = func;
+	param.ud = ud;
+	container_foreach(ctx->container, foreach_callback, &param);
+}
+
 
