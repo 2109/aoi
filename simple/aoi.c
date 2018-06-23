@@ -146,6 +146,7 @@ tile_pop(struct tile* tl, int level, object_t* object) {
 			list->tail = object->prev;
 		}
 	}
+	object->prev = object->next = NULL;
 }
 
 static inline void

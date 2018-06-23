@@ -149,6 +149,7 @@ remove_node(aoi_context_t* aoi_ctx, int flag, linknode_t* linknode) {
 			first->tail = linknode->prev;
 		}
 	}
+	linknode->next = linknode->prev = NULL;
 }
 
 static inline int
