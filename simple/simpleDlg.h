@@ -14,6 +14,7 @@ extern "C" {
 struct AoiObject {
 	CPoint pos;
 	CPoint dest;
+	int vt;
 	int id;
 };
 

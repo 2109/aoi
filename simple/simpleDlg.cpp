@@ -75,12 +75,21 @@ END_MESSAGE_MAP()
 
 void OnAOIEnter(int self, int other, void* ud) {
 	CsimpleDlg* pDlg = (CsimpleDlg*)ud;
-	pDlg->m_entity_status[other] = true;
+	std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(self);
+	if ( iter != pDlg->m_trigger_list.end())
+	{
+		pDlg->m_entity_status[other] = true;
+	}
+	
 }
 
 void OnAOILeave(int self, int other, void* ud) {
 	CsimpleDlg* pDlg = (CsimpleDlg*)ud;
-	pDlg->m_entity_status[other] = false;
+	std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(self);
+	if ( iter != pDlg->m_trigger_list.end() )
+	{
+		pDlg->m_entity_status[other] = false;
+	}
 }
 
 BOOL CsimpleDlg::OnInitDialog()
@@ -123,31 +132,33 @@ BOOL CsimpleDlg::OnInitDialog()
 	GetWindowRect(&m_rt);
 
 	m_cell = 5;
-	m_range = 10;
+	m_range = 20;
 	m_aoi_ctx = aoi_create(m_rt.right + 100, m_rt.bottom + 100, m_cell, m_range, 10240, OnAOIEnter, OnAOILeave);
 	m_countor = 1;
 
-	for ( int i = 0; i < 100; i++ )
+	for ( int i = 0; i < 500; i++ )
 	{
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
+		ctx->vt = rand() % 100 + 50;
 		ctx->pos = CPoint(rand() % (m_rt.right - 1), rand() % (m_rt.bottom-1));
 		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
 		m_entity_list[id] = ctx;
 	}
 
-	for ( int i = 0; i < 3; i++ )
+	for ( int i = 0; i < 2; i++ )
 	{
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
+		ctx->vt = rand() % 100 + 50;
 		ctx->pos = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
 		m_trigger_list[id] = ctx;
 	}
 
-	m_entity_status.clear();
+	//m_entity_status.clear();
 
 	SetTimer(1, 50, NULL);
 
@@ -274,7 +285,7 @@ void CsimpleDlg::UpdateTrigger()
 			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		}
 		else {
-			float vt = 50;
+			float vt = ctx->vt;
 			float ratio = ( vt * 0.1f ) / dt;
 			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
 			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
@@ -303,7 +314,7 @@ void CsimpleDlg::UpdateEntity()
 			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		}
 		else {
-			float vt = 50;
+			float vt = ctx->vt;
 			float ratio = ( vt * 0.1f ) / dt;
 			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
 			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
@@ -327,6 +338,7 @@ void CsimpleDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 
 	UpdateTrigger();
+	UpdateEntity();
 }
 
 
