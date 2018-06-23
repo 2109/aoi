@@ -60,6 +60,13 @@ typedef struct aoi_context {
 	struct tile *tiles;
 } aoi_context_t;
 
+static const char* ERROR_MESSAGE[] = {
+	"ok",
+	"error pos",
+	"error layer",
+	"error object id"
+};
+
 static inline struct tile*
 tile_withrc(struct aoi_context* ctx, int r, int c) {
 	if ( c > ctx->max_x_index || r > ctx->max_z_index )
@@ -130,14 +137,6 @@ tile_pop(struct tile* tl, int level, object_t* object) {
 		list->head = object->next;
 	}
 	object->prev = object->next = NULL;
-}
-
-static inline void
-assert_pos(aoi_context_t* ctx, float x, float z) {
-	if ( x < 0 || z < 0 || x > ctx->width || z > ctx->height ) {
-		fprintf(stderr, "invalide pos[%f:%f]", x, z);
-		assert(0);
-	}
 }
 
 static inline int
@@ -229,19 +228,17 @@ aoi_release(aoi_context_t* ctx) {
 
 int
 aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
-	assert_pos(ctx, x, z);
+	if (x < 0 || z < 0 || x > ctx->width || z > ctx->height) {
+		return ERROR_POS;
+	}
 	if (layer < 0 || layer >= LAYER_MAX) {
-		return -1;
+		return ERROR_LAYER;
 	}
 
 	object_t* self = pool_malloc(ctx->pool);
 	memset(self, 0, sizeof( *self ));
 
 	int id = container_add(ctx->container, self);
-	if ( id < 0 ) {
-		pool_free(ctx->pool, self);
-		return -1;
-	}
 
 	self->id = id;
 	self->uid = uid;
@@ -287,11 +284,10 @@ int
 aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 	object_t* self = container_get(ctx->container, id);
 	if ( !self ) {
-		return -1;
+		return ERROR_OBJECT_ID;
 	}
 
 	struct tile *tl = tile_withpos(ctx, &self->locat);
-	assert(tl != NULL);
 
 	struct location bl = { 0, 0 };
 	struct location tr = { 0, 0 };
@@ -325,17 +321,19 @@ aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 
 	pool_free(ctx->pool, self);
 
-	return 1;
+	return 0;
 }
 
 int
 aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 	object_t* self = container_get(ctx->container, id);
 	if ( !self ) {
-		return -1;
+		return ERROR_OBJECT_ID;
 	}
 
-	assert_pos(ctx, x, z);
+	if (x < 0 || z < 0 || x > ctx->width || z > ctx->height) {
+		return ERROR_POS;
+	}
 
 	struct location op = self->locat;
 	self->locat.x = x;
@@ -363,9 +361,6 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 				continue;
 
 			struct tile *tl = tile_withrc(ctx, z, x);
-			if ( tl == NULL ) {
-				return -1;
-			}
 
 			if (self->layer == LAYER_ITEM) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
@@ -394,9 +389,6 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 				continue;
 
 			struct tile *tl = tile_withrc(ctx, z, x);
-			if ( tl == NULL ) {
-				return -1;
-			}
 				
 			if (self->layer == LAYER_ITEM) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
@@ -420,6 +412,10 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 	}
 
 	return 0;
+}
+
+const char* aoi_error(int no) {
+	return ERROR_MESSAGE[-no];
 }
 
 int
