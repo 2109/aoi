@@ -80,6 +80,12 @@ void OnAOIEnter(int self, int other, void* ud) {
 	{
 		pDlg->m_entity_status[other] = true;
 	}
+	else {
+		std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(other);
+		if ( iter != pDlg->m_trigger_list.end() ) {
+			pDlg->m_entity_status[self] = true;
+		}
+	}
 	
 }
 
@@ -89,6 +95,12 @@ void OnAOILeave(int self, int other, void* ud) {
 	if ( iter != pDlg->m_trigger_list.end() )
 	{
 		pDlg->m_entity_status[other] = false;
+	}
+	else {
+		std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(other);
+		if ( iter != pDlg->m_trigger_list.end() ) {
+			pDlg->m_entity_status[self] = false;
+		}
 	}
 }
 
@@ -147,11 +159,11 @@ BOOL CsimpleDlg::OnInitDialog()
 		m_entity_list[id] = ctx;
 	}
 
-	for ( int i = 0; i < 2; i++ )
+	for ( int i = 0; i < 3; i++ )
 	{
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
-		ctx->vt = rand() % 100 + 50;
+		ctx->vt = rand() % 50 + 50;
 		ctx->pos = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
@@ -289,6 +301,8 @@ void CsimpleDlg::UpdateTrigger()
 			float ratio = ( vt * 0.1f ) / dt;
 			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
 			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
+			ctx->pos.x = ctx->pos.x <= 0 ? 1 : ctx->pos.x;
+			ctx->pos.y = ctx->pos.y <= 0 ? 1 : ctx->pos.y;
 
 			RECT rt;
 			rt.left = ctx->pos.x - 300;
@@ -309,7 +323,7 @@ void CsimpleDlg::UpdateEntity()
 	{
 		AoiObject* ctx = iter->second;
 		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
-		if ( dt <= 5 )
+		if ( dt <= 10 )
 		{
 			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		}
@@ -318,6 +332,8 @@ void CsimpleDlg::UpdateEntity()
 			float ratio = ( vt * 0.1f ) / dt;
 			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
 			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
+			ctx->pos.x = ctx->pos.x <= 0 ? 1 : ctx->pos.x;
+			ctx->pos.y = ctx->pos.y <= 0 ? 1 : ctx->pos.y;
 
 			RECT rt;
 			rt.left = ctx->pos.x - 300;

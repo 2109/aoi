@@ -33,7 +33,6 @@ typedef struct object {
 
 typedef struct link_list {
 	object_t* head;
-	object_t* tail;
 } link_list_t;
 
 typedef struct tile {
@@ -96,7 +95,7 @@ tile_level(struct tile* tl, int level) {
 	if ( tl->headers[level] == NULL ) {
 		tl->headers[level] = malloc(sizeof( link_list_t ));
 		memset(tl->headers[level], 0, sizeof( link_list_t ));
-		tl->headers[level]->head = tl->headers[level]->tail = NULL;
+		tl->headers[level]->head = NULL;
 	}
 	return tl->headers[level];
 }
@@ -106,20 +105,12 @@ tile_push(struct tile* tl, int level, object_t* object) {
 	link_list_t* list = tile_level(tl, level);
 
 	if ( list->head == NULL ) {
-		assert(list->head == list->tail);
-		list->head = list->tail = object;
+		list->head = object;
 	}
 	else {
-		if ( list->head == list->tail ) {
-			list->head = object;
-			object->next = list->tail;
-			list->tail->prev = object;
-		}
-		else {
-			object->next = list->head;
-			list->head->prev = object;
-			list->head = object;
-		}
+		object->next = list->head;
+		list->head->prev = object;
+		list->head = object;
 	}
 }
 
@@ -127,24 +118,15 @@ static inline void
 tile_pop(struct tile* tl, int level, object_t* object) {
 	link_list_t* list = tile_level(tl, level);
 
-	if ( list->head == list->tail ) {
-		assert(object == list->head);
-		list->head = list->tail = NULL;
+	if ( object->prev ) {
+		object->prev->next = object->next;
 	}
-	else {
-		if ( object->prev ) {
-			object->prev->next = object->next;
-		}
-		if ( object->next ) {
-			object->next->prev = object->prev;
-		}
+	if ( object->next ) {
+		object->next->prev = object->prev;
+	}
 
-		if ( object == list->head ) {
-			list->head = object->next;
-		}
-		else if ( object == list->tail ) {
-			list->tail = object->prev;
-		}
+	if ( object == list->head ) {
+		list->head = object->next;
 	}
 	object->prev = object->next = NULL;
 }
