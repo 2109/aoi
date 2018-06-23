@@ -86,7 +86,6 @@ void OnAOIEnter(int self, int other, void* ud) {
 			pDlg->m_entity_status[self] = true;
 		}
 	}
-	
 }
 
 void OnAOILeave(int self, int other, void* ud) {
@@ -144,7 +143,7 @@ BOOL CsimpleDlg::OnInitDialog()
 	GetWindowRect(&m_rt);
 
 	m_cell = 5;
-	m_range = 20;
+	m_range = 10;
 	m_aoi_ctx = aoi_create(m_rt.right + 100, m_rt.bottom + 100, m_cell, m_range, 10240, OnAOIEnter, OnAOILeave);
 	m_countor = 1;
 
@@ -155,22 +154,22 @@ BOOL CsimpleDlg::OnInitDialog()
 		ctx->vt = rand() % 100 + 50;
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() %  m_rt.right, rand() % m_rt.bottom);
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_ITEM, ( void* )this);
 		m_entity_list[id] = ctx;
+		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_ITEM, ( void* )this);
 	}
 
-	for ( int i = 0; i < 3; i++ )
+	for ( int i = 0; i < 5; i++ )
 	{
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
 		ctx->vt = rand() % 50 + 50;
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
 		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_USER, ( void* )this);
 		m_trigger_list[id] = ctx;
+		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_USER, ( void* )this);
 	}
 
-	//m_entity_status.clear();
+	Invalidate();
 
 	SetTimer(1, 50, NULL);
 
