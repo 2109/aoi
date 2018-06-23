@@ -125,7 +125,7 @@ BOOL CtowerDlg::OnInitDialog()
 		m_entity_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 2; i++ )
+	for ( int i = 0; i < 3; i++ )
 	{
 		TriggerCtx* ctx = new TriggerCtx();
 		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
