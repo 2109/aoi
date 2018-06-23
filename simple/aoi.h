@@ -1,6 +1,10 @@
 #ifndef SIMPLE_AOI_H
 #define SIMPLE_AOI_H
 
+#define LAYER_ITEM			0
+#define LAYER_MONSTER		1
+#define LAYER_USER			2
+#define LAYER_MAX			3
 
 typedef void(*callback_func)( int self, int other, void* ud );
 typedef void(*forearch_func)( int uid,float x,float z, void* ud );

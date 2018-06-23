@@ -153,9 +153,9 @@ BOOL CsimpleDlg::OnInitDialog()
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
 		ctx->vt = rand() % 100 + 50;
-		ctx->pos = CPoint(rand() % (m_rt.right - 1), rand() % (m_rt.bottom-1));
-		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->dest = CPoint(rand() %  m_rt.right, rand() % m_rt.bottom);
+		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_ITEM, ( void* )this);
 		m_entity_list[id] = ctx;
 	}
 
@@ -164,9 +164,9 @@ BOOL CsimpleDlg::OnInitDialog()
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
 		ctx->vt = rand() % 50 + 50;
-		ctx->pos = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
-		ctx->dest = CPoint(rand() % ( m_rt.right - 1 ), rand() % ( m_rt.bottom - 1 ));
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, 1, ( void* )this);
+		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_USER, ( void* )this);
 		m_trigger_list[id] = ctx;
 	}
 

@@ -14,8 +14,9 @@
 #define inline __inline
 #endif
 
-#define MAX_LEVEL 8
-#define COMMON_LEVEL 0
+#define FLAG_SELF		0x1
+#define FLAG_OTHER		0x2
+
 
 typedef struct location {
 	float x;
@@ -28,7 +29,7 @@ typedef struct object {
 	location_t locat;
 	int id;
 	int uid;
-	int level;
+	int layer;
 } object_t;
 
 typedef struct link_list {
@@ -75,8 +76,8 @@ tile_init(struct aoi_context* ctx) {
 			struct tile* tl = tile_withrc(ctx, z, x);
 			tl->x = x;
 			tl->z = z;
-			tl->headers = malloc(MAX_LEVEL * sizeof( struct list * ));
-			memset(tl->headers, 0, MAX_LEVEL * sizeof( struct list * ));
+			tl->headers = malloc(LAYER_MAX * sizeof( struct list * ));
+			memset(tl->headers, 0, LAYER_MAX * sizeof(struct list *));
 		}
 	}
 }
@@ -133,7 +134,7 @@ tile_pop(struct tile* tl, int level, object_t* object) {
 
 static inline void
 assert_pos(aoi_context_t* ctx, float x, float z) {
-	if ( x < 0 || z < 0 || x >= ctx->width || z >= ctx->height ) {
+	if ( x < 0 || z < 0 || x > ctx->width || z > ctx->height ) {
 		fprintf(stderr, "invalide pos[%f:%f]", x, z);
 		assert(0);
 	}
@@ -163,25 +164,27 @@ get_region(aoi_context_t* ctx, location_t *pos, int range, location_t *bl, locat
 }
 
 void
-forearch_list(link_list_t *list, object_t *self, callback_func func, void* ud) {
+forearch_list(link_list_t *list, object_t *self, int flag, callback_func func, void* ud) {
 	struct object *cursor = list->head;
 	while ( cursor ) {
 		if ( cursor == self ) {
 			cursor = cursor->next;
 			continue;
 		}
-		func(self->uid, cursor->uid, ud);
+		if (flag & FLAG_SELF) {
+			func(self->uid, cursor->uid, ud);
+		}
+		if (flag & FLAG_OTHER) {
+			func(cursor->uid, self->uid, ud);
+		}
 		cursor = cursor->next;
 	}
 }
 
 aoi_context_t*
 aoi_create(int width, int height, int cell, int range, int max, callback_func enter_func, callback_func leave_func) {
-	int max_x_index = width / cell - 1;
-	int max_z_index = height / cell - 1;
-
-	width = ( max_x_index + 1 ) * cell;
-	height = ( max_z_index + 1 ) * cell;
+	int max_x_index = width / cell;
+	int max_z_index = height / cell;
 
 	aoi_context_t* ctx = malloc(sizeof( *ctx ));
 	memset(ctx, 0, sizeof( *ctx ));
@@ -213,7 +216,7 @@ aoi_release(aoi_context_t* ctx) {
 		for ( z = 0; z <= ctx->max_z_index; z++ ) {
 			struct tile* tl = tile_withrc(ctx, z, x);
 			int i;
-			for ( i = 0; i < MAX_LEVEL; i++ ) {
+			for ( i = 0; i < LAYER_MAX; i++ ) {
 				if ( tl->headers[i] )
 					free(tl->headers[i]);
 			}
@@ -225,9 +228,9 @@ aoi_release(aoi_context_t* ctx) {
 }
 
 int
-aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int level, void* ud) {
+aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
 	assert_pos(ctx, x, z);
-	if ( level < 0 || level  > MAX_LEVEL ) {
+	if (layer < 0 || layer >= LAYER_MAX) {
 		return -1;
 	}
 
@@ -244,7 +247,7 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int level, void* ud) {
 	self->uid = uid;
 	self->locat.x = x;
 	self->locat.z = z;
-	self->level = level;
+	self->layer = layer;
 
 	tile_t *tl = tile_withpos(ctx, &self->locat);
 	assert(tl != NULL);
@@ -256,16 +259,27 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int level, void* ud) {
 	for ( z = bl.z; z <= tr.z; z++ ) {
 		for ( x = bl.x; x <= tr.x; x++ ) {
 			tile_t *tl = tile_withrc(ctx, z, x);
-			link_list_t *list = tile_level(tl, COMMON_LEVEL);
-			forearch_list(list, self, ctx->enter_func, ud);
 
-			if ( self->level != COMMON_LEVEL ) {
-				list = tile_level(tl, self->level);
-				forearch_list(list, self, ctx->enter_func, ud);
+			if (self->layer == LAYER_ITEM) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
+			} else if (self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_ITEM);
+				forearch_list(list, self, FLAG_SELF, ctx->enter_func, ud);
+
+				list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
+
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
 			}
 		}
 	}
-	tile_push(tl, self->level, self);
+	tile_push(tl, self->layer, self);
 	return id;
 }
 
@@ -282,9 +296,7 @@ aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 	struct location bl = { 0, 0 };
 	struct location tr = { 0, 0 };
 	get_region(ctx, &self->locat, ctx->range, &bl, &tr);
-	
 
-	int array_index = 1;
 	int x, z;
 	for ( z = bl.z; z <= tr.z; z++ ) {
 		for ( x = bl.x; x <= tr.x; x++ ) {
@@ -293,17 +305,21 @@ aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 				return -1;
 			}
 				
-			link_list_t *list = tile_level(tl, COMMON_LEVEL);
-			forearch_list(list, self, ctx->leave_func, ud);
+			if (self->layer == LAYER_ITEM || self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, ctx->leave_func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
 
-			if ( self->level != COMMON_LEVEL ) {
-				link_list_t *list = tile_level(tl, self->level);
-				forearch_list(list, self, ctx->leave_func, ud);
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
 			}
 		}
 	}
 
-	tile_pop(tl, self->level, self);
+	tile_pop(tl, self->layer, self);
 
 	container_remove(ctx->container, id);
 
@@ -330,8 +346,8 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 	if ( otl == ntl )
 		return 0;
 
-	tile_pop(otl, self->level, self);
-	tile_push(ntl, self->level, self);
+	tile_pop(otl, self->layer, self);
+	tile_push(ntl, self->layer, self);
 
 	struct location obl, otr;
 	get_region(ctx, &op, ctx->range, &obl, &otr);
@@ -351,12 +367,23 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 				return -1;
 			}
 
-			link_list_t *list = tile_level(tl, COMMON_LEVEL);
-			forearch_list(list, self, ctx->enter_func, ud);
+			if (self->layer == LAYER_ITEM) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
+			}
+			else if (self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_ITEM);
+				forearch_list(list, self, FLAG_SELF, ctx->enter_func, ud);
 
-			if ( self->level != COMMON_LEVEL ) {
-				link_list_t *list = tile_level(tl, self->level);
-				forearch_list(list, self, ctx->enter_func, ud);
+				list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
+
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
 			}
 		}
 	}
@@ -371,12 +398,23 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 				return -1;
 			}
 				
-			link_list_t *list = tile_level(tl, COMMON_LEVEL);
-			forearch_list(list, self, ctx->leave_func, ud);
+			if (self->layer == LAYER_ITEM) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER, ctx->leave_func, ud);
+			}
+			else if (self->layer == LAYER_MONSTER) {
+				link_list_t *list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->leave_func, ud);
+			}
+			else {
+				link_list_t *list = tile_level(tl, LAYER_ITEM);
+				forearch_list(list, self, FLAG_SELF, ctx->leave_func, ud);
 
-			if ( self->level != COMMON_LEVEL ) {
-				link_list_t *list = tile_level(tl, self->level);
-				forearch_list(list, self, ctx->leave_func, ud);
+				list = tile_level(tl, LAYER_MONSTER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->leave_func, ud);
+
+				list = tile_level(tl, LAYER_USER);
+				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->leave_func, ud);
 			}
 		}
 	}
@@ -385,7 +423,7 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 }
 
 int
-get_viewlist(aoi_context_t* ctx,int id, callback_func func,void* ud) {
+get_witness(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 	object_t* self = container_get(ctx->container, id);
 
 	struct tile *tl = tile_withpos(ctx, &self->locat);
@@ -401,13 +439,31 @@ get_viewlist(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 			struct tile *tl = tile_withrc(ctx, z, x);
 			assert(tl != NULL);
 
-			link_list_t *list = tile_level(tl, COMMON_LEVEL);
-			forearch_list(list, self, func, ud);
+			
+		}
+	}
 
-			if ( self->level != COMMON_LEVEL ) {
-				link_list_t *list = tile_level(tl, self->level);
-				forearch_list(list, self, func, ud);
-			}
+	return 0;
+}
+
+int
+get_visible(aoi_context_t* ctx, int id, callback_func func, void* ud) {
+	object_t* self = container_get(ctx->container, id);
+
+	struct tile *tl = tile_withpos(ctx, &self->locat);
+	assert(tl != NULL);
+
+	struct location bl = { 0, 0 };
+	struct location tr = { 0, 0 };
+	get_region(ctx, &self->locat, ctx->range, &bl, &tr);
+
+	int x, z;
+	for (z = bl.z; z <= tr.z; z++) {
+		for (x = bl.x; x <= tr.x; x++) {
+			struct tile *tl = tile_withrc(ctx, z, x);
+			assert(tl != NULL);
+
+
 		}
 	}
 
