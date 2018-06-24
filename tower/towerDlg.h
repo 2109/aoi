@@ -14,18 +14,58 @@ extern "C" {
 #include <map>
 #include <vector>
 
-struct TriggerCtx {
-	CPoint pos;
-	CPoint dest;
-	int range;
-	int id;
-};
-
 struct EntityCtx {
 	CPoint pos;
 	CPoint dest;
+	CRect rt;
+	int speed;
 	int id;
+
+	EntityCtx(CRect rt_) {
+		rt = rt_;
+		speed = rand() % 50 + 50;
+		RandomPos();
+		RandomDest();
+	}
+
+	void RandomPos() {
+		pos.x = rand() % rt.right;
+		pos.y = rand() % rt.bottom;
+	}
+
+	void RandomDest() {
+		dest.x = rand() % rt.right;
+		dest.y = rand() % rt.bottom;
+	}
+
+	float Distance() {
+		float dt = sqrt((dest.x - pos.x) * (dest.x - pos.x) + (dest.y - pos.y) * (dest.y - pos.y));
+		return dt;
+	}
+
+	bool Update() {
+		float dt = this->Distance();
+		if (dt <= 5) {
+			RandomDest();
+			return false;
+		}
+		else {
+			float ratio = (this->speed * 0.1f) / dt;
+			pos.x = pos.x + (dest.x - pos.x) * ratio;
+			pos.y = pos.y + (dest.y - pos.y) * ratio;
+			pos.x = pos.x < 0 ? 0 : pos.x;
+			pos.y = pos.y < 0 ? 0 : pos.y;
+			return true;
+		}
+	}
 };
+
+struct TriggerCtx:public EntityCtx {
+	int range;
+	TriggerCtx(CRect rt_) :EntityCtx(rt_){
+	}
+};
+
 
 // CtowerDlg 对话框
 class CtowerDlg : public CDialogEx
@@ -43,19 +83,18 @@ public:
 public:
 	struct aoi* m_aoi_ctx;
 	int m_countor;
+	int m_cell;
 	CRect m_rt;
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::vector<EntityCtx*> m_entity_list;
-	std::map<int, struct aoi_object*> m_map;
-	std::map<int, bool> m_entity_status;
-	std::map<int, bool> m_trigger_status;
-	int m_timer_countor;
-
+	std::map<int, int> m_entity_status;
 
 	int CreateEntity(CPoint& point);
 	int CreateTrigger(CPoint& point, int range);
 	void UpdateTrigger();
 	void UpdateEntity();
+	void RefEntity(int uid);
+	void DeRefEntity(int uid);
 // 实现
 protected:
 	HICON m_hIcon;

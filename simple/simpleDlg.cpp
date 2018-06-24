@@ -78,12 +78,12 @@ void OnAOIEnter(int self, int other, void* ud) {
 	std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(self);
 	if ( iter != pDlg->m_trigger_list.end())
 	{
-		pDlg->m_entity_status[other] = true;
+		pDlg->RefEntity(other);
 	}
 	else {
 		std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(other);
 		if ( iter != pDlg->m_trigger_list.end() ) {
-			pDlg->m_entity_status[self] = true;
+			pDlg->RefEntity(self);
 		}
 	}
 }
@@ -93,12 +93,12 @@ void OnAOILeave(int self, int other, void* ud) {
 	std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(self);
 	if ( iter != pDlg->m_trigger_list.end() )
 	{
-		pDlg->m_entity_status[other] = false;
+		pDlg->DeRefEntity(other);
 	}
 	else {
 		std::map<int, AoiObject*>::iterator iter = pDlg->m_trigger_list.find(other);
 		if ( iter != pDlg->m_trigger_list.end() ) {
-			pDlg->m_entity_status[self] = false;
+			pDlg->DeRefEntity(self);
 		}
 	}
 }
@@ -158,7 +158,7 @@ BOOL CsimpleDlg::OnInitDialog()
 		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_ITEM, ( void* )this);
 	}
 
-	for ( int i = 0; i < 5; i++ )
+	for ( int i = 0; i < 100; i++ )
 	{
 		int id = m_countor++;
 		AoiObject* ctx = new AoiObject();
@@ -205,15 +205,15 @@ void ForeachObject(int uid, float x,float z, void* ud) {
 	if ( iter != pDlg->m_entity_list.end())
 	{
 		AoiObject* object = iter->second;
-		std::map<int, bool>::iterator it = pDlg->m_entity_status.find(uid);
+		std::map<int, int>::iterator it = pDlg->m_entity_status.find(uid);
 		if ( it != pDlg->m_entity_status.end() )
 		{
-			bool val = it->second;
+			int countor = it->second;
 
 			CBrush brush0(RGB(0, 255, 0));
 			CBrush brush1(RGB(255, 0, 0));
 
-			if ( val )
+			if (countor > 0)
 				dc.SelectObject(&brush0);
 			else
 				dc.SelectObject(&brush1);
@@ -363,4 +363,28 @@ void CsimpleDlg::OnClose()
 
 	CDialogEx::OnClose();
 	aoi_release(m_aoi_ctx);
+}
+
+void CsimpleDlg::RefEntity(int uid)
+{
+	std::map<int, int>::iterator iter = m_entity_status.find(uid);
+	if (iter == m_entity_status.end())
+	{
+		m_entity_status[uid] = 1;
+	}
+	else {
+		int countor = iter->second;
+		countor++;
+		m_entity_status[uid] = countor;
+	}
+}
+
+void CsimpleDlg::DeRefEntity(int uid)
+{
+	std::map<int, int>::iterator iter = m_entity_status.find(uid);
+	assert(iter != m_entity_status.end());
+
+	int countor = iter->second;
+	countor--;
+	m_entity_status[uid] = countor;
 }

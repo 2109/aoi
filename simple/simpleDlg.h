@@ -41,12 +41,14 @@ public:
 	std::map<int, AoiObject*> m_trigger_list;
 	std::map<int, AoiObject*> m_entity_list;
 
-	std::map<int, bool> m_entity_status;
+	std::map<int, int> m_entity_status;
 	std::map<int, bool> m_trigger_status;
 
 	void UpdateTrigger();
 	void UpdateEntity();
 
+	void RefEntity(int uid);
+	void DeRefEntity(int uid);
 // й╣ож
 protected:
 	HICON m_hIcon;
