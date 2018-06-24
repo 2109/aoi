@@ -124,13 +124,12 @@ BOOL CtowerDlg::OnInitDialog()
 		m_entity_list.push_back(ctx);
 	}
 
-	for ( int i = 0; i < 20; i++ )
+	for ( int i = 0; i < 100; i++ )
 	{
 		TriggerCtx* ctx = new TriggerCtx(m_rt);
 		ctx->id = CreateTrigger(ctx->pos, rand() % 5 + 5);
 		m_trigger_list.push_back(ctx);
 	}
-
 
 	SetTimer(1, 50, NULL);
 
