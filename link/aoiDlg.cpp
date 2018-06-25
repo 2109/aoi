@@ -120,7 +120,7 @@ BOOL CAoiDlg::OnInitDialog()
 
 	GetWindowRect(&m_rt);
 
-	for (int i = 0; i < 50;i++)
+	for (int i = 0; i < 100;i++)
 	{
 		CreateTrigger();
 	}

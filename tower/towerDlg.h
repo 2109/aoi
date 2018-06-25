@@ -14,32 +14,32 @@ extern "C" {
 #include <map>
 #include <vector>
 
-struct EntityCtx {
-	CPoint pos;
-	CPoint dest;
-	CRect rt;
-	int speed;
-	int id;
+struct AoiCtx {
+	CPoint m_pos;
+	CPoint m_dest;
+	CRect m_rt;
+	int m_speed;
+	int m_id;
 
-	EntityCtx(CRect rt_) {
-		rt = rt_;
-		speed = rand() % 50 + 50;
+	AoiCtx(CRect rt) {
+		m_rt = rt;
+		m_speed = rand() % 50 + 50;
 		RandomPos();
 		RandomDest();
 	}
 
 	void RandomPos() {
-		pos.x = rand() % rt.right;
-		pos.y = rand() % rt.bottom;
+		m_pos.x = rand() % m_rt.right;
+		m_pos.y = rand() % m_rt.bottom;
 	}
 
 	void RandomDest() {
-		dest.x = rand() % rt.right;
-		dest.y = rand() % rt.bottom;
+		m_dest.x = rand() % m_rt.right;
+		m_dest.y = rand() % m_rt.bottom;
 	}
 
 	float Distance() {
-		float dt = sqrt((dest.x - pos.x) * (dest.x - pos.x) + (dest.y - pos.y) * (dest.y - pos.y));
+		float dt = sqrt(( m_dest.x - m_pos.x ) * ( m_dest.x - m_pos.x ) + ( m_dest.y - m_pos.y ) * ( m_dest.y - m_pos.y ));
 		return dt;
 	}
 
@@ -50,19 +50,26 @@ struct EntityCtx {
 			return false;
 		}
 		else {
-			float ratio = (this->speed * 0.1f) / dt;
-			pos.x = pos.x + (dest.x - pos.x) * ratio;
-			pos.y = pos.y + (dest.y - pos.y) * ratio;
-			pos.x = pos.x < 0 ? 0 : pos.x;
-			pos.y = pos.y < 0 ? 0 : pos.y;
+			float ratio = (this->m_speed * 0.1f) / dt;
+			m_pos.x = m_pos.x + ( m_dest.x - m_pos.x ) * ratio;
+			m_pos.y = m_pos.y + ( m_dest.y - m_pos.y ) * ratio;
+			m_pos.x = m_pos.x < 0 ? 0 : m_pos.x;
+			m_pos.y = m_pos.y < 0 ? 0 : m_pos.y;
 			return true;
 		}
 	}
 };
 
-struct TriggerCtx:public EntityCtx {
-	int range;
-	TriggerCtx(CRect rt_) :EntityCtx(rt_){
+struct TriggerCtx : public AoiCtx {
+	int m_range;
+	TriggerCtx(CRect rt) :AoiCtx(rt){
+		m_range = rand() % 5 + 5;
+	}
+};
+
+struct EntityCtx : public AoiCtx {
+	EntityCtx(CRect rt) :AoiCtx(rt){
+
 	}
 };
 
@@ -84,13 +91,14 @@ public:
 	struct aoi* m_aoi_ctx;
 	int m_countor;
 	int m_cell;
+	int m_entity_radius;
 	CRect m_rt;
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::vector<EntityCtx*> m_entity_list;
 	std::map<int, int> m_entity_status;
 
-	int CreateEntity(CPoint& point);
-	int CreateTrigger(CPoint& point, int range);
+	void CreateEntity();
+	void CreateTrigger();
 	void UpdateTrigger();
 	void UpdateEntity();
 	void RefEntity(int uid);

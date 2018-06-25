@@ -112,6 +112,7 @@ BOOL CtowerDlg::OnInitDialog()
 	*stdout = *hf;
 
 	m_cell = 5;
+	m_entity_radius = 3;
 	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, m_cell);
 	m_countor = 1;
 
@@ -119,16 +120,12 @@ BOOL CtowerDlg::OnInitDialog()
 
 	for (int i = 0; i < 500; i++)
 	{
-		EntityCtx* ctx = new EntityCtx(m_rt);
-		ctx->id = CreateEntity(ctx->pos);
-		m_entity_list.push_back(ctx);
+		CreateEntity();
 	}
 
 	for ( int i = 0; i < 100; i++ )
 	{
-		TriggerCtx* ctx = new TriggerCtx(m_rt);
-		ctx->id = CreateTrigger(ctx->pos, rand() % 5 + 5);
-		m_trigger_list.push_back(ctx);
+		CreateTrigger();
 	}
 
 	SetTimer(1, 50, NULL);
@@ -171,12 +168,12 @@ void foreach_entity_callback(int uid, int x, int z, void* ud) {
 		else
 			dc.SelectObject(&brush1);
 
-		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+		dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 	}
 	else{
 		CBrush brush0(RGB(255, 0, 0));
 		dc.SelectObject(&brush0);
-		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+		dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 	}
 }
 
@@ -188,7 +185,7 @@ void foreach_trigger_callback(int uid, int x, int z, int range, void* ud) {
 
 	dc.SelectObject(&pen1);
 
-	dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+	dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 
 	dc.MoveTo(x - range * pDlg->m_cell, z - range * pDlg->m_cell);
 	dc.LineTo(x + range * pDlg->m_cell, z - range * pDlg->m_cell);
@@ -262,18 +259,20 @@ void OnTriggerLeave(int self, int other, void* ud) {
 	pDlg->DeRefEntity(other);
 }
 
-int CtowerDlg::CreateEntity(CPoint& point)
+void CtowerDlg::CreateEntity()
 {
 	int uid = m_countor++;
-	int id = create_entity(m_aoi_ctx, uid, point.x, point.y, OnEntityEnter, ( void* )this);
-	return id;
+	EntityCtx* ctx = new EntityCtx(m_rt);
+	ctx->m_id = create_entity(m_aoi_ctx, uid, ctx->m_pos.x, ctx->m_pos.y, OnEntityEnter, ( void* )this);
+	m_entity_list.push_back(ctx);
 }
 
-int CtowerDlg::CreateTrigger(CPoint& point, int range)
+void CtowerDlg::CreateTrigger()
 {
 	int uid = m_countor++;
-	int id = create_trigger(m_aoi_ctx, uid, point.x, point.y, range, OnTriggerEnter, ( void* )this);
-	return id;
+	TriggerCtx* ctx = new TriggerCtx(m_rt);
+	ctx->m_id = create_trigger(m_aoi_ctx, uid, ctx->m_pos.x, ctx->m_pos.y, ctx->m_range, OnTriggerEnter, ( void* )this);
+	m_trigger_list.push_back(ctx);
 }
 
 
@@ -291,14 +290,15 @@ void CtowerDlg::UpdateTrigger()
 	for (int i = 0; i < m_trigger_list.size(); i++)
 	{
 		TriggerCtx* ctx = m_trigger_list[i];
+		RECT rt;
+		rt.left = ctx->m_pos.x - ctx->m_range * m_cell - 10;
+		rt.top = ctx->m_pos.y - ctx->m_range * m_cell - 10;
+		rt.right = ctx->m_pos.x + ctx->m_range * m_cell + 10;
+		rt.bottom = ctx->m_pos.y + ctx->m_range * m_cell + 10;
+		InvalidateRect(&rt);
 		if (ctx->Update()) {
-			RECT rt;
-			rt.left = ctx->pos.x - 300;
-			rt.top = ctx->pos.y - 300;
-			rt.right = ctx->pos.x + 300;
-			rt.bottom = ctx->pos.y + 300;
-			InvalidateRect(&rt);
-			move_trigger(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, OnTriggerEnter, (void*)this, OnTriggerLeave, (void*)this);
+			
+			move_trigger(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, OnTriggerEnter, (void*)this, OnTriggerLeave, (void*)this);
 		}
 	}
 }
@@ -308,15 +308,15 @@ void CtowerDlg::UpdateEntity()
 	for ( int i = 0; i < m_entity_list.size(); i++ )
 	{
 		EntityCtx* ctx = m_entity_list[i];
+		RECT rt;
+		rt.left = ctx->m_pos.x - m_entity_radius;
+		rt.top = ctx->m_pos.y - m_entity_radius;
+		rt.right = ctx->m_pos.x + m_entity_radius;
+		rt.bottom = ctx->m_pos.y + m_entity_radius;
+		InvalidateRect(&rt);
 		if (ctx->Update()) {
-			RECT rt;
-			rt.left = ctx->pos.x - 10;
-			rt.top = ctx->pos.y - 10;
-			rt.right = ctx->pos.x + 10;
-			rt.bottom = ctx->pos.y + 10;
-
-			InvalidateRect(&rt);
-			move_entity(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, OnEntityEnter, (void*)this, OnEntityLeave, (void*)this);
+			
+			move_entity(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, OnEntityEnter, (void*)this, OnEntityLeave, (void*)this);
 		}
 	}
 }
