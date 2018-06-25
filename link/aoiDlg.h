@@ -11,17 +11,62 @@ extern "C" {
 #include <map>
 #include <vector>
 
-struct TriggerCtx {
-	CPoint pos;
-	CPoint dest;
-	int range;
-	struct aoi_object* trigger;
+struct AoiCtx {
+	CRect m_rt;
+	CPoint m_pos;
+	CPoint m_dest;
+	int m_speed;
+	struct aoi_object* m_aoi;
+
+	AoiCtx(CRect rt) {
+		m_rt = rt;
+		m_speed = rand() % 50 + 50;
+		RandomPos();
+		RandomDest();
+	}
+
+	void RandomPos() {
+		m_pos.x = rand() % m_rt.right;
+		m_pos.y = rand() % m_rt.bottom;
+	}
+
+	void RandomDest() {
+		m_dest.x = rand() % m_rt.right;
+		m_dest.y = rand() % m_rt.bottom;
+	}
+
+	float Distance() {
+		float dt = sqrt(( m_dest.x - m_pos.x ) * ( m_dest.x - m_pos.x ) + ( m_dest.y - m_pos.y ) * ( m_dest.y - m_pos.y ));
+		return dt;
+	}
+
+	bool Update() {
+		float dt = this->Distance();
+		if ( dt <= 5 ) {
+			RandomDest();
+			return false;
+		}
+		else {
+			float ratio = ( this->m_speed * 0.1f ) / dt;
+			m_pos.x = m_pos.x + ( m_dest.x - m_pos.x ) * ratio;
+			m_pos.y = m_pos.y + ( m_dest.y - m_pos.y ) * ratio;
+			m_pos.x = m_pos.x < 0 ? 0 : m_pos.x;
+			m_pos.y = m_pos.y < 0 ? 0 : m_pos.y;
+			return true;
+		}
+	}
 };
 
-struct EntityCtx {
-	CPoint pos;
-	CPoint dest;
-	struct aoi_object* entity;
+struct TriggerCtx : public AoiCtx {
+	int m_range;
+	TriggerCtx(CRect rt) :AoiCtx(rt) {
+		m_range = rand() % 50 + 10;
+	}
+};
+
+struct EntityCtx : public AoiCtx  {
+	EntityCtx(CRect rt) :AoiCtx(rt) {
+	}
 };
 
 // CAoiDlg 对话框
@@ -36,21 +81,23 @@ public:
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
-
-	struct aoi_object* CreateEntity(CPoint& point);
-	struct aoi_object* CreateTrigger(CPoint& point,int range);
+	
+public:
+	void RefEntity(int uid);
+	void DeRefEntity(int uid);
+	void CreateEntity();
+	void CreateTrigger();
 	void UpdateTrigger();
 	void UpdateEntity();
 public:
 	struct aoi_context* m_aoi_ctx;
 	int m_countor;
+	int m_entity_radius;
 	CRect m_rt;
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::vector<EntityCtx*> m_entity_list;
-	std::map<int, struct aoi_object*> m_map;
-	std::map<int, bool> m_entity_status;
-	std::map<int, bool> m_trigger_status;
-	int m_timer_countor;
+	std::map<int, int> m_entity_status;
+
 // 实现
 protected:
 	HICON m_hIcon;
