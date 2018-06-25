@@ -125,11 +125,18 @@ BOOL CAoiDlg::OnInitDialog()
 		CreateTrigger();
 	}
 
-	for ( int i = 0; i < 500; i++ )
+	for ( int i = 0; i < 1000; i++ )
 	{
 		CreateEntity();
 	}
 	
+	m_profiler = new AoiProfiler();
+
+	m_entity_static = new CStatic();
+	m_entity_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 20, 300, 100), this);
+
+	m_trigger_static = new CStatic();
+	m_trigger_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 50, 300, 100), this);
 
 	SetTimer(1, 50, NULL);
 
@@ -229,6 +236,14 @@ void CAoiDlg::OnPaint()
 
 	foreach_aoi_entity(m_aoi_ctx, foreach_entity_callback, this);
 	foreach_aoi_trigger(m_aoi_ctx, foreach_trigger_callback, this);
+
+	CString str;
+	str.Format(_T("实体耗时:%fms"), m_profiler->GetEntityCost());
+	m_entity_static->SetWindowText(str);
+
+	str;
+	str.Format(_T("触发器耗时:%fms"), m_profiler->GetTriggerCost());
+	m_trigger_static->SetWindowText(str);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -309,6 +324,8 @@ void CAoiDlg::UpdateTrigger()
 {
 	for (size_t i = 0; i < m_trigger_list.size();i++)
 	{
+		TriggerProfiler helper(m_profiler);
+
 		TriggerCtx* ctx = m_trigger_list[i];
 		int range = ctx->m_range + 10;
 
@@ -330,6 +347,7 @@ void CAoiDlg::UpdateEntity()
 {
 	for ( size_t i = 0; i < m_entity_list.size(); i++ )
 	{
+		EntityProfiler helper(m_profiler);
 		EntityCtx* ctx = m_entity_list[i];
 
 		RECT rt;

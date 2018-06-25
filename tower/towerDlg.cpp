@@ -115,10 +115,11 @@ BOOL CtowerDlg::OnInitDialog()
 	m_entity_radius = 3;
 	m_aoi_ctx = create_aoi(1024 * 10, 1000, 1000, m_cell);
 	m_countor = 1;
+	m_profiler = new AoiProfiler();
 
 	GetWindowRect(&m_rt);
 
-	for (int i = 0; i < 500; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		CreateEntity();
 	}
@@ -127,6 +128,12 @@ BOOL CtowerDlg::OnInitDialog()
 	{
 		CreateTrigger();
 	}
+
+	m_entity_static = new CStatic();
+	m_entity_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 20, 300, 100), this);
+
+	m_trigger_static = new CStatic();
+	m_trigger_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 50, 300, 100), this);
 
 	SetTimer(1, 50, NULL);
 
@@ -226,6 +233,14 @@ void CtowerDlg::OnPaint()
 
 	foreach_entity(m_aoi_ctx, foreach_entity_callback, this);
 	foreach_trigger(m_aoi_ctx, foreach_trigger_callback, this);
+
+	CString str;
+	str.Format(_T("实体耗时:%fms"), m_profiler->GetEntityCost());
+	m_entity_static->SetWindowText(str);
+
+	str;
+	str.Format(_T("触发器耗时:%fms"), m_profiler->GetTriggerCost());
+	m_trigger_static->SetWindowText(str);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -289,6 +304,7 @@ void CtowerDlg::UpdateTrigger()
 {
 	for (int i = 0; i < m_trigger_list.size(); i++)
 	{
+		TriggerProfiler helper(m_profiler);
 		TriggerCtx* ctx = m_trigger_list[i];
 		RECT rt;
 		rt.left = ctx->m_pos.x - ctx->m_range * m_cell - 10;
@@ -307,6 +323,7 @@ void CtowerDlg::UpdateEntity()
 {
 	for ( int i = 0; i < m_entity_list.size(); i++ )
 	{
+		EntityProfiler helper(m_profiler);
 		EntityCtx* ctx = m_entity_list[i];
 		RECT rt;
 		rt.left = ctx->m_pos.x - m_entity_radius;

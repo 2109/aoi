@@ -148,7 +148,7 @@ BOOL CsimpleDlg::OnInitDialog()
 	m_aoi_ctx = aoi_create(m_rt.right + 100, m_rt.bottom + 100, m_cell, m_range, 64, OnAOIEnter, OnAOILeave);
 	m_countor = 1;
 
-	for ( int i = 0; i < 500; i++ )
+	for ( int i = 0; i < 1000; i++ )
 	{
 		CreateEntity();
 	}

@@ -73,6 +73,66 @@ struct EntityCtx : public AoiCtx {
 	}
 };
 
+struct AoiProfiler {
+	LARGE_INTEGER m_freq;
+	double m_entity_cost;
+	double m_trigger_cost;
+	int m_invoke_entity_count;
+	int m_invoke_trigger_count;
+
+	AoiProfiler() {
+		QueryPerformanceFrequency(&m_freq);
+		m_entity_cost = 0;
+		m_invoke_entity_count = 0;
+		m_trigger_cost = 0;
+		m_invoke_trigger_count = 0;
+	}
+
+	double GetEntityCost() {
+		return m_entity_cost / m_invoke_entity_count;
+	}
+
+	double GetTriggerCost() {
+		return m_trigger_cost / m_invoke_trigger_count;
+	}
+};
+
+struct EntityProfiler {
+	AoiProfiler* m_profiler;
+	LARGE_INTEGER m_begin;
+	EntityProfiler(AoiProfiler* profiler) {
+		m_profiler = profiler;
+		QueryPerformanceCounter(&m_begin);
+	}
+
+	~EntityProfiler() {
+		LARGE_INTEGER over;
+		QueryPerformanceCounter(&over);
+
+		double cost = (double)( ( over.QuadPart - m_begin.QuadPart ) * 1000 ) / (double)m_profiler->m_freq.QuadPart;
+		m_profiler->m_invoke_entity_count++;
+		m_profiler->m_entity_cost += cost;
+	}
+
+};
+
+struct TriggerProfiler {
+	AoiProfiler* m_profiler;
+	LARGE_INTEGER m_begin;
+	TriggerProfiler(AoiProfiler* profiler) {
+		m_profiler = profiler;
+		QueryPerformanceCounter(&m_begin);
+	}
+
+	~TriggerProfiler() {
+		LARGE_INTEGER over;
+		QueryPerformanceCounter(&over);
+
+		double cost = (double)( ( over.QuadPart - m_begin.QuadPart ) * 1000 ) / (double)m_profiler->m_freq.QuadPart;
+		m_profiler->m_invoke_trigger_count++;
+		m_profiler->m_trigger_cost += cost;
+	}
+};
 
 // CtowerDlg ¶Ô»°¿ò
 class CtowerDlg : public CDialogEx
@@ -93,6 +153,9 @@ public:
 	int m_cell;
 	int m_entity_radius;
 	CRect m_rt;
+	CStatic* m_entity_static;
+	CStatic* m_trigger_static;
+	AoiProfiler* m_profiler;
 	std::vector<TriggerCtx*> m_trigger_list;
 	std::vector<EntityCtx*> m_entity_list;
 	std::map<int, int> m_entity_status;
