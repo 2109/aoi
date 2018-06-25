@@ -141,7 +141,8 @@ BOOL CsimpleDlg::OnInitDialog()
 	*stdout = *hf;
 
 	GetWindowRect(&m_rt);
-
+	m_profiler = new AoiProfiler();
+	m_entity_radius = 3;
 	m_cell = 5;
 	m_range = 10;
 	m_aoi_ctx = aoi_create(m_rt.right + 100, m_rt.bottom + 100, m_cell, m_range, 64, OnAOIEnter, OnAOILeave);
@@ -149,27 +150,19 @@ BOOL CsimpleDlg::OnInitDialog()
 
 	for ( int i = 0; i < 500; i++ )
 	{
-		int id = m_countor++;
-		AoiObject* ctx = new AoiObject();
-		ctx->vt = rand() % 100 + 50;
-		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->dest = CPoint(rand() %  m_rt.right, rand() % m_rt.bottom);
-		m_entity_list[id] = ctx;
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_ITEM, ( void* )this);
+		CreateEntity();
 	}
 
 	for ( int i = 0; i < 100; i++ )
 	{
-		int id = m_countor++;
-		AoiObject* ctx = new AoiObject();
-		ctx->vt = rand() % 50 + 50;
-		ctx->pos = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		m_trigger_list[id] = ctx;
-		ctx->id = aoi_enter(m_aoi_ctx, id, ctx->pos.x, ctx->pos.y, LAYER_USER, ( void* )this);
+		CreateTrigger();
 	}
 
-	Invalidate();
+	m_entity_static = new CStatic();
+	m_entity_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 20, 300, 100), this);
+
+	m_trigger_static = new CStatic();
+	m_trigger_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 50, 300, 100), this);
 
 	SetTimer(1, 50, NULL);
 
@@ -218,12 +211,12 @@ void ForeachObject(int uid, float x,float z, void* ud) {
 			else
 				dc.SelectObject(&brush1);
 			
-			dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+			dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 		}
 		else{
 			CBrush brush0(RGB(255, 0, 0));
 			dc.SelectObject(&brush0);
-			dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+			dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 		}
 	}
 	else {
@@ -233,7 +226,7 @@ void ForeachObject(int uid, float x,float z, void* ud) {
 		CPen pen(PS_DOT, 1, RGB(255, 0, 0));
 		dc.SelectObject(&pen);
 
-		dc.Ellipse(x - 5, z - 5, x + 5, z + 5);
+		dc.Ellipse(x - pDlg->m_entity_radius, z - pDlg->m_entity_radius, x + pDlg->m_entity_radius, z + pDlg->m_entity_radius);
 		
 		dc.MoveTo(x - pDlg->m_range * pDlg->m_cell, z - pDlg->m_range * pDlg->m_cell);
 		dc.LineTo(x + pDlg->m_range * pDlg->m_cell, z - pDlg->m_range * pDlg->m_cell);
@@ -275,6 +268,14 @@ void CsimpleDlg::OnPaint()
 	}
 
 	forearch_object(m_aoi_ctx, ForeachObject, ( void* )this);
+
+	CString str;
+	str.Format(_T("实体耗时:%fms"), m_profiler->GetEntityCost());
+	m_entity_static->SetWindowText(str);
+
+	str;
+	str.Format(_T("触发器耗时:%fms"), m_profiler->GetTriggerCost());
+	m_trigger_static->SetWindowText(str);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -289,29 +290,19 @@ void CsimpleDlg::UpdateTrigger()
 	std::map<int, AoiObject*>::iterator iter = m_trigger_list.begin();
 	for ( ; iter != m_trigger_list.end(); iter++ )
 	{
+		EntityProfiler helper(m_profiler);
+
 		AoiObject* ctx = iter->second;
-		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
-		if ( dt <= 5 )
-		{
-			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
+		RECT rt;
+		rt.left = ctx->m_pos.x - m_range * m_cell - 10;
+		rt.top = ctx->m_pos.y - m_range * m_cell - 10;
+		rt.right = ctx->m_pos.x + m_range * m_cell + 10;
+		rt.bottom = ctx->m_pos.y + m_range * m_cell + 10;
+		InvalidateRect(&rt);
+		if ( ctx->Update() ) {
+			aoi_update(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, ( void* )this);
 		}
-		else {
-			float vt = ctx->vt;
-			float ratio = ( vt * 0.1f ) / dt;
-			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
-			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
-			ctx->pos.x = ctx->pos.x <= 0 ? 1 : ctx->pos.x;
-			ctx->pos.y = ctx->pos.y <= 0 ? 1 : ctx->pos.y;
 
-			RECT rt;
-			rt.left = ctx->pos.x - 300;
-			rt.top = ctx->pos.y - 300;
-			rt.right = ctx->pos.x + 300;
-			rt.bottom = ctx->pos.y + 300;
-			InvalidateRect(&rt);
-
-			aoi_update(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, ( void* )this);
-		}
 	}
 }
 
@@ -320,28 +311,17 @@ void CsimpleDlg::UpdateEntity()
 	std::map<int, AoiObject*>::iterator iter = m_entity_list.begin();
 	for ( ; iter != m_entity_list.end(); iter++ )
 	{
+		TriggerProfiler helper(m_profiler);
+
 		AoiObject* ctx = iter->second;
-		float dt = sqrt(( ctx->dest.x - ctx->pos.x ) * ( ctx->dest.x - ctx->pos.x ) + ( ctx->dest.y - ctx->pos.y ) * ( ctx->dest.y - ctx->pos.y ));
-		if ( dt <= 10 )
-		{
-			ctx->dest = CPoint(rand() % m_rt.right, rand() % m_rt.bottom);
-		}
-		else {
-			float vt = ctx->vt;
-			float ratio = ( vt * 0.1f ) / dt;
-			ctx->pos.x = ctx->pos.x + ( ctx->dest.x - ctx->pos.x ) * ratio;
-			ctx->pos.y = ctx->pos.y + ( ctx->dest.y - ctx->pos.y ) * ratio;
-			ctx->pos.x = ctx->pos.x <= 0 ? 1 : ctx->pos.x;
-			ctx->pos.y = ctx->pos.y <= 0 ? 1 : ctx->pos.y;
-
-			RECT rt;
-			rt.left = ctx->pos.x - 300;
-			rt.top = ctx->pos.y - 300;
-			rt.right = ctx->pos.x + 300;
-			rt.bottom = ctx->pos.y + 300;
-			InvalidateRect(&rt);
-
-			aoi_update(m_aoi_ctx, ctx->id, ctx->pos.x, ctx->pos.y, ( void* )this);
+		RECT rt;
+		rt.left = ctx->m_pos.x - m_entity_radius;
+		rt.top = ctx->m_pos.y - m_entity_radius;
+		rt.right = ctx->m_pos.x + m_entity_radius;
+		rt.bottom = ctx->m_pos.y + m_entity_radius;
+		InvalidateRect(&rt);
+		if ( ctx->Update() ) {
+			aoi_update(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, ( void* )this);
 		}
 	}
 }
@@ -387,4 +367,20 @@ void CsimpleDlg::DeRefEntity(int uid)
 	int countor = iter->second;
 	countor--;
 	m_entity_status[uid] = countor;
+}
+
+void CsimpleDlg::CreateEntity()
+{
+	int id = m_countor++;
+	AoiObject* ctx = new AoiObject(m_rt);
+	m_entity_list[id] = ctx;
+	ctx->m_id = aoi_enter(m_aoi_ctx, id, ctx->m_pos.x, ctx->m_pos.y, LAYER_ITEM, ( void* )this);
+}
+
+void CsimpleDlg::CreateTrigger()
+{
+	int id = m_countor++;
+	AoiObject* ctx = new AoiObject(m_rt);
+	m_trigger_list[id] = ctx;
+	ctx->m_id = aoi_enter(m_aoi_ctx, id, ctx->m_pos.x, ctx->m_pos.y, LAYER_USER, ( void* )this);
 }
