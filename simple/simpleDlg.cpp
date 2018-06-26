@@ -143,20 +143,16 @@ BOOL CsimpleDlg::OnInitDialog()
 	GetWindowRect(&m_rt);
 	m_profiler = new AoiProfiler();
 	m_entity_radius = 3;
-	m_cell = 5;
-	m_range = 10;
+	m_cell = 10;
+	m_range = 5;
 	m_aoi_ctx = aoi_create(m_rt.right + 100, m_rt.bottom + 100, m_cell, m_range, 64, OnAOIEnter, OnAOILeave);
 	m_countor = 1;
 
 	for ( int i = 0; i < 1000; i++ )
-	{
 		CreateEntity();
-	}
 
 	for ( int i = 0; i < 100; i++ )
-	{
 		CreateTrigger();
-	}
 
 	m_entity_static = new CStatic();
 	m_entity_static->Create(_T(""), WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(0, 20, 300, 100), this);
@@ -291,18 +287,10 @@ void CsimpleDlg::UpdateTrigger()
 	for ( ; iter != m_trigger_list.end(); iter++ )
 	{
 		EntityProfiler helper(m_profiler);
-
 		AoiObject* ctx = iter->second;
-		RECT rt;
-		rt.left = ctx->m_pos.x - m_range * m_cell - 10;
-		rt.top = ctx->m_pos.y - m_range * m_cell - 10;
-		rt.right = ctx->m_pos.x + m_range * m_cell + 10;
-		rt.bottom = ctx->m_pos.y + m_range * m_cell + 10;
-		InvalidateRect(&rt);
 		if ( ctx->Update() ) {
 			aoi_update(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, ( void* )this);
 		}
-
 	}
 }
 
@@ -312,14 +300,7 @@ void CsimpleDlg::UpdateEntity()
 	for ( ; iter != m_entity_list.end(); iter++ )
 	{
 		TriggerProfiler helper(m_profiler);
-
 		AoiObject* ctx = iter->second;
-		RECT rt;
-		rt.left = ctx->m_pos.x - m_entity_radius;
-		rt.top = ctx->m_pos.y - m_entity_radius;
-		rt.right = ctx->m_pos.x + m_entity_radius;
-		rt.bottom = ctx->m_pos.y + m_entity_radius;
-		InvalidateRect(&rt);
 		if ( ctx->Update() ) {
 			aoi_update(m_aoi_ctx, ctx->m_id, ctx->m_pos.x, ctx->m_pos.y, ( void* )this);
 		}
@@ -334,6 +315,7 @@ void CsimpleDlg::OnTimer(UINT_PTR nIDEvent)
 
 	UpdateTrigger();
 	UpdateEntity();
+	Invalidate();
 }
 
 
