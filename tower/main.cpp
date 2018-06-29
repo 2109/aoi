@@ -31,7 +31,7 @@ int main()
 	int width = 1024;
 	int height = 500;
 
-	AoiContext* context = new AoiContext(width, height);
+	AoiContext* context = new AoiContext(width, height, 10);
 	g_context = context;
 	for ( int i = 0; i < 1000; i++ )
 	{

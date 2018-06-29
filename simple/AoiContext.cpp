@@ -6,13 +6,14 @@
 #include "AoiEntity.h"
 #include "AoiTrigger.h"
 
-AoiContext::AoiContext(float width,float height)
+AoiContext::AoiContext(float width,float height,float range)
 {
 	m_width = width;
 	m_height = height;
+	m_range = range;
 	m_countor = 1;
 	m_context = NULL;
-	m_context = aoi_create(m_width, m_height, 5, 10, 5000, AoiContext::OnEntityEnter, AoiContext::OnEntityLeave);
+	m_context = aoi_create(m_width, m_height, 5, m_range, 5000, AoiContext::OnEntityEnter, AoiContext::OnEntityLeave);
 }
 
 
@@ -22,7 +23,7 @@ AoiContext::~AoiContext()
 
 void AoiContext::CreateTrigger()
 {
-	Aoi* aoi = new AoiTrigger(rand() % (int)m_width, rand() % (int)m_height, 10, 10, this);
+	Aoi* aoi = new AoiTrigger(rand() % (int)m_width, rand() % (int)m_height, rand() % 10 + 5, m_range * 5, this);
 	aoi->RandomTarget();
 	m_trigger_list[aoi->m_id] = aoi;
 	aoi->Enter();
@@ -30,7 +31,7 @@ void AoiContext::CreateTrigger()
 
 void AoiContext::CreateEntity()
 {
-	Aoi* aoi = new AoiEntity(rand() % (int)m_width, rand() % (int)m_height, 10, this);
+	Aoi* aoi = new AoiEntity(rand() % (int)m_width, rand() % (int)m_height, rand() % 10 + 5, this);
 	aoi->RandomTarget();
 	m_entity_list[aoi->m_id] = aoi;
 	aoi->Enter();

@@ -4,7 +4,7 @@
 
 AoiTrigger::AoiTrigger(float x, float z, float speed, float range, AoiContext* context) :Aoi(x, z, speed, context)
 {
-	m_range = rand() % (int)range + 20;
+	m_range = range;
 }
 
 

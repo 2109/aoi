@@ -11,7 +11,7 @@ class Aoi;
 class AoiContext
 {
 public:
-	AoiContext(float width,float height);
+	AoiContext(float width,float height, float range);
 	~AoiContext();
 
 	static void OnEntityEnter(int self, int other, void* ud);
@@ -32,6 +32,7 @@ public:
 public:
 	float m_width;
 	float m_height;
+	float m_range;
 	int m_countor;
 	struct aoi_context* m_context;
 	std::map<int, int> m_entity_status;
