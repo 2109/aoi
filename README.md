@@ -1,4 +1,4 @@
-# game server aoi(area of intrest)
+# game server aoi(area of interest)
 
 ## simple aoi
 
