@@ -2,14 +2,14 @@
 
 ## simple aoi
 
-	![image](https://github.com/2109/aoi/snapshot/blob/master/simple.jpg)
+	![image](https://github.com/2109/aoi/blob/master/snapshot/simple.jpg)
 
 
 ## tower aoi
 
-	![image](https://github.com/2109/aoi/snapshot/blob/master/tower.jpg)
+	![image](https://github.com/2109/aoi/blob/master/snapshot/tower.jpg)
 
 
 ## link aoi
 	
-	![image](https://github.com/2109/aoi/snapshot/blob/master/link.jpg)
+	![image](https://github.com/2109/aoi/blob/master/snapshot/link.jpg)
