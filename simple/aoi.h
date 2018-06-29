@@ -1,27 +1,33 @@
-#ifndef SIMPLE_AOI_H
-#define SIMPLE_AOI_H
+#pragma once
 
-#define LAYER_ITEM			0
-#define LAYER_MONSTER		1
-#define LAYER_USER			2
-#define LAYER_MAX			3
+#include "Vector2.h"
+#include "AoiContext.h"
+class Aoi
+{
+public:
+	Aoi(float x,float z,float speed,AoiContext* context);
+	~Aoi();
 
-#define ERROR_POS			-1
-#define ERROR_LAYER			-2
-#define ERROR_OBJECT_ID		-3
+	void RandomTarget();
 
-typedef void(*callback_func)( int self, int other, void* ud );
-typedef void(*forearch_func)( int uid,float x,float z, void* ud );
+	void SetTarget(float x, float z);
 
-struct aoi_context;
+	virtual void Enter() = 0;
 
-struct aoi_context* aoi_create(int, int, int, int, int, callback_func, callback_func);
-void aoi_release(struct aoi_context*);
+	virtual void Update(float interval);
 
-int aoi_enter(struct aoi_context*, int, float, float, int, void*);
-int aoi_leave(struct aoi_context*, int, void*);
-int aoi_update(struct aoi_context*, int, float, float, void*);
-const char* aoi_error(int no);
-void forearch_object(struct aoi_context*, forearch_func, void*);
+	virtual void Draw();
 
-#endif
+	virtual void Ref();
+	virtual void DeRef();
+
+public:
+	float m_radius;
+	float m_speed;
+	int m_id;
+	int m_ref;
+	AoiContext* m_context;
+	Vector2 m_pos;
+	Vector2 m_target;
+};
+

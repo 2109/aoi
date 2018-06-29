@@ -1,33 +1,33 @@
-#ifndef TOWER_AOI_H
-#define TOWER_AOI_H
+#pragma once
 
+#include "Vector2.h"
+#include "AoiContext.h"
+class Aoi
+{
+public:
+	Aoi(float x,float z,float speed,AoiContext* context);
+	~Aoi();
 
-typedef void(*callback_func)( int uid, void* ud );
+	void RandomTarget();
 
-typedef void(*enter_func)( int self, int other, void* ud );
-typedef void(*leave_func)( int self, int other, void* ud );
+	void SetTarget(float x, float z);
 
-typedef void(*foreach_entity_func)( int uid, int x, int z, void* ud );
-typedef void(*foreach_trigger_func)( int uid, int x, int z, int range, void* ud );
+	virtual void Enter() = 0;
 
-struct object;
-struct aoi;
+	virtual void Update(float interval);
 
-struct aoi* create_aoi(int max, int width, int height, int cell);
-void release_aoi(struct aoi* aoi);
+	virtual void Draw();
 
-int create_entity(struct aoi* aoi, int uid, float x, float z, enter_func func, void* ud);
-void remove_entity(struct aoi* aoi, int id, leave_func func, void* ud);
-void move_entity(struct aoi* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud);
+	virtual void Ref();
+	virtual void DeRef();
 
-int create_trigger(struct aoi* aoi, int uid, float x, float z, int range, enter_func func, void* ud);
-void remove_trigger(struct aoi* aoi, int id);
-void move_trigger(struct aoi* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud);
+public:
+	float m_radius;
+	float m_speed;
+	int m_id;
+	int m_ref;
+	AoiContext* m_context;
+	Vector2 m_pos;
+	Vector2 m_target;
+};
 
-void get_witness(struct aoi* aoi, int id, callback_func, void* ud);
-void get_visible(struct aoi* aoi, int id, callback_func, void* ud);
-
-void foreach_entity(struct aoi* aoi, foreach_entity_func func, void* ud);
-void foreach_trigger(struct aoi* aoi, foreach_trigger_func func, void* ud);
-
-#endif

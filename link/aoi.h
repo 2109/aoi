@@ -1,28 +1,34 @@
-#ifndef LINK_AOI_H
-#define LINK_AOI_H
+#pragma once
 
+#include "Vector2.h"
+#include "AoiContext.h"
+class Aoi
+{
+public:
+	Aoi(float x,float z,float speed,AoiContext* context);
+	~Aoi();
 
-struct aoi_context;
-struct aoi_object;
+	void RandomTarget();
 
-typedef void(*foreach_entity_func)( int uid, int x, int z, void* ud );
-typedef void(*foreach_trigger_func)( int uid, int x, int z, int range, void* ud );
+	void SetTarget(float x, float z);
 
-typedef void(*callback_func)( int self, int other, void* ud );
+	virtual void Enter() = 0;
 
-struct aoi_context* create_aoi_ctx();
-struct aoi_object* create_aoi_object(struct aoi_context* aoi_ctx, int uid);
+	virtual void Update(float interval);
 
-int create_entity(struct aoi_context* aoi_ctx, struct aoi_object* object, int x, int z, callback_func enter_func, callback_func leave_func, void *ud);
-int create_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, int range, callback_func enter_func, callback_func leave_func, void *ud);
+	virtual void Draw();
 
-int delete_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int shuffle, void* ud);
-int delete_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object);
+	virtual void Ref();
+	virtual void DeRef();
 
-void move_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, void* ud);
-void move_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, void* ud);
+public:
+	float m_radius;
+	float m_speed;
+	int m_id;
+	int m_ref;
+	AoiContext* m_context;
+	struct aoi_object* m_object;
+	Vector2 m_pos;
+	Vector2 m_target;
+};
 
-void foreach_aoi_entity(struct aoi_context* aoi_ctx, foreach_entity_func func, void* ud);
-void foreach_aoi_trigger(struct aoi_context* aoi_ctx, foreach_trigger_func func, void* ud);
-
-#endif

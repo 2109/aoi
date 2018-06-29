@@ -15,67 +15,58 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="simple.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="simpleDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aoi.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="object_container.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="pool.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="simple.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="simpleDlg.cpp">
+    <ClCompile Include="Aoi.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="AoiContext.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aoi.c">
+    <ClCompile Include="AoiEntity.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="object_container.c">
+    <ClCompile Include="AoiTrigger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pool.c">
+    <ClCompile Include="Vector2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="simple\object_container.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="simple\pool.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="simple\simple-aoi.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="simple.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\simple.rc2">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\simple.ico">
-      <Filter>资源文件</Filter>
-    </Image>
+    <ClInclude Include="Aoi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiContext.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiEntity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiTrigger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="simple\object_container.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="simple\pool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="simple\simple-aoi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -15,64 +15,55 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aoi.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aoiDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aoiApp.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="khash.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="hash_witness.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="Aoi.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aoi.c">
+    <ClCompile Include="AoiContext.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aoiDlg.cpp">
+    <ClCompile Include="AoiEntity.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aoiApp.cpp">
+    <ClCompile Include="AoiTrigger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="hash_witness.c">
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="link\hash_witness.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="link\link-aoi.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="aoi_test.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\aoi_test.rc2">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\aoi_test.ico">
-      <Filter>资源文件</Filter>
-    </Image>
+    <ClInclude Include="Aoi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiContext.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiEntity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AoiTrigger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="link\hash_witness.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="link\khash.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="link\link-aoi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
