@@ -8,10 +8,9 @@ extern "C" {
 
 class Aoi;
 
-class AoiContext
-{
+class AoiContext {
 public:
-	AoiContext(float width,float height,float range);
+	AoiContext(float width, float height, float range);
 	~AoiContext();
 
 	static void OnEntityEnter(int self, int other, void* ud);
@@ -30,7 +29,7 @@ public:
 	void RefEntity(int uid);
 
 	void DeRefEntity(int uid);
-	
+
 	void Update(float interval);
 
 	void Draw();
@@ -39,7 +38,7 @@ public:
 	float m_height;
 	float m_range;
 	int m_countor;
-	struct aoi_context* m_context; 
+	struct aoi_context* m_context;
 	std::map<int, int> m_entity_status;
 	std::map<int, Aoi*> m_entity_list;
 	std::map<int, Aoi*> m_trigger_list;

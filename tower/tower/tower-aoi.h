@@ -2,13 +2,13 @@
 #define TOWER_AOI_H
 
 
-typedef void(*callback_func)( int uid, void* ud );
+typedef void(*callback_func)(int uid, void* ud);
 
-typedef void(*enter_func)( int self, int other, void* ud );
-typedef void(*leave_func)( int self, int other, void* ud );
+typedef void(*enter_func)(int self, int other, void* ud);
+typedef void(*leave_func)(int self, int other, void* ud);
 
-typedef void(*foreach_entity_func)( int uid, int x, int z, void* ud );
-typedef void(*foreach_trigger_func)( int uid, int x, int z, int range, void* ud );
+typedef void(*foreach_entity_func)(int uid, int x, int z, void* ud);
+typedef void(*foreach_trigger_func)(int uid, int x, int z, int range, void* ud);
 
 struct object;
 struct aoi;

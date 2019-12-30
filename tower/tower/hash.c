@@ -1,7 +1,7 @@
 #include "hash.h"
 #include <assert.h>
 
-void hash_set(hash_t *self, int uid,struct object* obj) {
+void hash_set(hash_t *self, int uid, struct object* obj) {
 	assert(hash_has(self, uid) == 0);
 	int ok;
 	khiter_t k = kh_put(watcher, self, uid, &ok);
@@ -11,7 +11,7 @@ void hash_set(hash_t *self, int uid,struct object* obj) {
 
 int hash_has(hash_t *self, int uid) {
 	khiter_t k = kh_get(watcher, self, uid);
-	if ( k < kh_end(self) ) {
+	if (k < kh_end(self)) {
 		return kh_exist(self, k);
 	}
 	return 0;

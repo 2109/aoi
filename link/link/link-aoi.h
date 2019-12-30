@@ -5,10 +5,10 @@
 struct aoi_context;
 struct aoi_object;
 
-typedef void(*foreach_entity_func)( int uid, int x, int z, void* ud );
-typedef void(*foreach_trigger_func)( int uid, int x, int z, int range, void* ud );
+typedef void(*foreach_entity_func)(int uid, int x, int z, void* ud);
+typedef void(*foreach_trigger_func)(int uid, int x, int z, int range, void* ud);
 
-typedef void(*callback_func)( int self, int other, void* ud );
+typedef void(*callback_func)(int self, int other, void* ud);
 
 struct aoi_context* create_aoi_ctx();
 struct aoi_object* create_aoi_object(struct aoi_context* aoi_ctx, int uid);

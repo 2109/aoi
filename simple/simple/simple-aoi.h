@@ -10,8 +10,8 @@
 #define ERROR_LAYER			-2
 #define ERROR_OBJECT_ID		-3
 
-typedef void(*callback_func)( int self, int other, void* ud );
-typedef void(*forearch_func)( int uid,float x,float z, void* ud );
+typedef void(*callback_func)(int self, int other, void* ud);
+typedef void(*forearch_func)(int uid, float x, float z, void* ud);
 
 struct aoi_context;
 

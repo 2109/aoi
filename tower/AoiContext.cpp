@@ -6,8 +6,7 @@
 #include "AoiEntity.h"
 #include "AoiTrigger.h"
 
-AoiContext::AoiContext(float width,float height,float range)
-{
+AoiContext::AoiContext(float width, float height, float range) {
 	m_width = width;
 	m_height = height;
 	m_range = range;
@@ -17,20 +16,17 @@ AoiContext::AoiContext(float width,float height,float range)
 }
 
 
-AoiContext::~AoiContext()
-{
+AoiContext::~AoiContext() {
 }
 
-void AoiContext::CreateTrigger()
-{
+void AoiContext::CreateTrigger() {
 	Aoi* aoi = new AoiTrigger(rand() % (int)m_width, rand() % (int)m_height, rand() % 10 + 5, rand() % (int)m_range + 2, this);
 	aoi->RandomTarget();
 	m_trigger_list[aoi->m_id] = aoi;
 	aoi->Enter();
 }
 
-void AoiContext::CreateEntity()
-{
+void AoiContext::CreateEntity() {
 	Aoi* aoi = new AoiEntity(rand() % (int)m_width, rand() % (int)m_height, rand() % 10 + 5, this);
 	aoi->RandomTarget();
 	m_entity_list[aoi->m_id] = aoi;
@@ -58,31 +54,25 @@ void AoiContext::OnTriggerLeave(int self, int other, void* ud) {
 	inst->DeRefEntity(other);
 }
 
-void AoiContext::RefEntity(int uid)
-{
+void AoiContext::RefEntity(int uid) {
 	std::map<int, Aoi*>::iterator iter = m_entity_list.find(uid);
-	if (iter != m_entity_list.end())
-	{
+	if (iter != m_entity_list.end()) {
 		Aoi* aoi = iter->second;
 		aoi->Ref();
-	}
-	else {
+	} else {
 		std::map<int, Aoi*>::iterator iter = m_trigger_list.find(uid);
 		Aoi* aoi = iter->second;
 		aoi->Ref();
 	}
-	
+
 }
 
-void AoiContext::DeRefEntity(int uid)
-{
+void AoiContext::DeRefEntity(int uid) {
 	std::map<int, Aoi*>::iterator iter = m_entity_list.find(uid);
-	if ( iter != m_entity_list.end() )
-	{
+	if (iter != m_entity_list.end()) {
 		Aoi* aoi = iter->second;
 		aoi->DeRef();
-	}
-	else {
+	} else {
 		std::map<int, Aoi*>::iterator iter = m_trigger_list.find(uid);
 		Aoi* aoi = iter->second;
 		aoi->DeRef();
@@ -90,35 +80,29 @@ void AoiContext::DeRefEntity(int uid)
 }
 
 
-void AoiContext::Update(float interval)
-{
+void AoiContext::Update(float interval) {
 	std::map<int, Aoi*>::iterator iter = m_entity_list.begin();
-	for ( ; iter != m_entity_list.end();iter++ )
-	{
+	for (; iter != m_entity_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Update(interval);
 	}
 
 	iter = m_trigger_list.begin();
-	for ( ; iter != m_trigger_list.end(); iter++ )
-	{
+	for (; iter != m_trigger_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Update(interval);
 	}
 }
 
-void AoiContext::Draw()
-{
+void AoiContext::Draw() {
 	std::map<int, Aoi*>::iterator iter = m_entity_list.begin();
-	for ( ; iter != m_entity_list.end(); iter++ )
-	{
+	for (; iter != m_entity_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Draw();
 	}
 
 	iter = m_trigger_list.begin();
-	for ( ; iter != m_trigger_list.end(); iter++ )
-	{
+	for (; iter != m_trigger_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Draw();
 	}

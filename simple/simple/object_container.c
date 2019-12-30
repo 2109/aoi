@@ -18,17 +18,17 @@ struct object_sot {
 struct object_container {
 	void** mgr;
 	int size;
-	struct object_sot* slots; 
+	struct object_sot* slots;
 	struct object_sot* freelist;
 };
 
 
 struct object_container*
-container_create(int max) {
+	container_create(int max) {
 	assert(max > 0);
 
 	struct object_container* container = malloc(sizeof(*container));
-	memset(container,0,sizeof(*container));
+	memset(container, 0, sizeof(*container));
 
 	container->size = max;
 	container->mgr = malloc(sizeof(*container->mgr) * container->size);
@@ -37,7 +37,7 @@ container_create(int max) {
 	container->slots = malloc(sizeof(*container->slots) * container->size);
 	memset(container->slots, 0, sizeof(*container->slots) * container->size);
 	int i;
-	for(i = 0;i < container->size;i++) {
+	for (i = 0; i < container->size; i++) {
 		struct object_sot* slot = &container->slots[i];
 		slot->index = i;
 		slot->next = container->freelist;
@@ -82,7 +82,7 @@ container_release(struct object_container* container) {
 }
 
 void*
-container_get(struct object_container* container,int id) {
+container_get(struct object_container* container, int id) {
 	if (id < 0 || id >= container->size) {
 		return NULL;
 	}
@@ -91,17 +91,17 @@ container_get(struct object_container* container,int id) {
 }
 
 void
-container_foreach(struct object_container* container,foreach_func func,void* ud) {
+container_foreach(struct object_container* container, foreach_func func, void* ud) {
 	int i;
-	for(i = 0;i < container->size;i++) {
+	for (i = 0; i < container->size; i++) {
 		if (container->mgr[i]) {
-			func(i,container->mgr[i],ud);
+			func(i, container->mgr[i], ud);
 		}
 	}
 }
 
 int
-container_add(struct object_container* container,void* object) {
+container_add(struct object_container* container, void* object) {
 	if (!container->freelist) {
 		container_resize(container);
 	}
@@ -114,7 +114,7 @@ container_add(struct object_container* container,void* object) {
 }
 
 void
-container_remove(struct object_container* container,int id) {
+container_remove(struct object_container* container, int id) {
 	struct object_sot* slot = &container->slots[id];
 	slot->next = container->freelist;
 	container->freelist = slot;

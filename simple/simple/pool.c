@@ -30,24 +30,24 @@ static void
 expand_pool(struct pool_ctx* ctx) {
 	size_t alloc_size = sizeof(struct pool_node_link) + ctx->count * (sizeof(struct pool_obj) + ctx->size);
 	struct pool_node_link* pool_link = malloc(alloc_size);
-	memset(pool_link,0,alloc_size);
+	memset(pool_link, 0, alloc_size);
 
 	pool_link->next = ctx->pool;
 	ctx->pool = pool_link;
 
 	struct pool_obj* pool = (struct pool_obj*)&pool_link[1];
 	int i;
-	for(i=0;i<ctx->count;i++) {
+	for (i = 0; i < ctx->count; i++) {
 		struct pool_obj* obj_node = (struct pool_obj*)((char*)pool + i * (sizeof(struct pool_obj) + ctx->size));
 		obj_node->next = ctx->freelist;
 		ctx->freelist = obj_node;
 	}
-} 
+}
 
 struct pool_ctx*
-pool_create(int size) {
+	pool_create(int size) {
 	struct pool_ctx* ctx = malloc(sizeof(*ctx));
-	memset(ctx,0,sizeof(*ctx));
+	memset(ctx, 0, sizeof(*ctx));
 	ctx->size = size;
 	ctx->count = POOL_SIZE;
 
@@ -59,7 +59,7 @@ pool_create(int size) {
 void
 pool_release(struct pool_ctx* ctx) {
 	struct pool_node_link* cursor = ctx->pool;
-	while(cursor) {
+	while (cursor) {
 		struct pool_node_link* tmp = cursor;
 		cursor = cursor->next;
 		free(tmp);
@@ -78,7 +78,7 @@ pool_malloc(struct pool_ctx* ctx) {
 }
 
 void
-pool_free(struct pool_ctx* ctx,void* ptr) {
+pool_free(struct pool_ctx* ctx, void* ptr) {
 	struct pool_obj* node = (struct pool_obj*)((char*)ptr - sizeof(struct pool_obj));
 	node->next = ctx->freelist;
 	ctx->freelist = node;

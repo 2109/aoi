@@ -2,10 +2,9 @@
 
 #include "Vector2.h"
 #include "AoiContext.h"
-class Aoi
-{
+class Aoi {
 public:
-	Aoi(float x,float z,float speed,AoiContext* context);
+	Aoi(float x, float z, float speed, AoiContext* context);
 	~Aoi();
 
 	void RandomTarget();

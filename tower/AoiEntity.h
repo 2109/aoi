@@ -3,8 +3,7 @@
 #include "Aoi.h"
 
 
-class AoiEntity : public Aoi
-{
+class AoiEntity : public Aoi {
 public:
 	AoiEntity(float x, float z, float speed, AoiContext* context);
 	~AoiEntity();

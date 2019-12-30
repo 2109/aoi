@@ -1,6 +1,5 @@
 #pragma once
-class Vector2
-{
+class Vector2 {
 public:
 	Vector2(float x, float z);
 	Vector2();

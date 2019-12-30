@@ -8,8 +8,7 @@
 
 AoiContext* g_context;
 
-void renderScene(void)
-{
+void renderScene(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
 	g_context->Draw();
 	glFlush();  //执行OpenGL指令列表中的指令
@@ -26,20 +25,17 @@ void TimerFunc(int id) {
 	glutPostRedisplay();
 }
 
-int main()
-{
+int main() {
 	int width = 1024;
 	int height = 500;
 
 	AoiContext* context = new AoiContext(width, height, 50);
 	g_context = context;
-	for ( int i = 0; i < 1000; i++ )
-	{
+	for (int i = 0; i < 1000; i++) {
 		context->CreateEntity();
 	}
 
-	for ( int i = 0; i < 20; i++ )
-	{
+	for (int i = 0; i < 20; i++) {
 		context->CreateTrigger();;
 	}
 

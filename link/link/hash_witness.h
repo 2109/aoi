@@ -15,7 +15,7 @@ typedef khash_t(uid) hash_set_t;
 	if (!kh_exist(self, k)) continue; \
 		val = kh_value(self, k); \
 		block; \
-	} \
+		} \
 }
 void hash_set_put(hash_set_t *self, int);
 int hash_set_has(hash_set_t *self, int);

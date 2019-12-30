@@ -8,10 +8,9 @@ extern "C" {
 
 class Aoi;
 
-class AoiContext
-{
+class AoiContext {
 public:
-	AoiContext(float width,float height,float range);
+	AoiContext(float width, float height, float range);
 	~AoiContext();
 
 	static void OnEntityEnter(int self, int other, void* ud);
@@ -30,7 +29,7 @@ public:
 	void RefEntity(int uid);
 
 	void DeRefEntity(int uid);
-	
+
 	void Update(float interval);
 
 	void Draw();

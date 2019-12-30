@@ -69,21 +69,21 @@ static const char* ERROR_MESSAGE[] = {
 
 static inline struct tile*
 tile_withrc(struct aoi_context* ctx, int r, int c) {
-	if ( c > ctx->max_x_index || r > ctx->max_z_index )
+	if (c > ctx->max_x_index || r > ctx->max_z_index)
 		return NULL;
-	return &ctx->tiles[r * ( ctx->max_x_index + 1 ) + c];
+	return &ctx->tiles[r * (ctx->max_x_index + 1) + c];
 }
 
 static inline void
 tile_init(struct aoi_context* ctx) {
-	ctx->tiles = malloc(ctx->tile_size * sizeof( struct tile ));
+	ctx->tiles = malloc(ctx->tile_size * sizeof(struct tile));
 	int x, z;
-	for ( x = 0; x <= ctx->max_x_index; x++ ) {
-		for ( z = 0; z <= ctx->max_z_index; z++ ) {
+	for (x = 0; x <= ctx->max_x_index; x++) {
+		for (z = 0; z <= ctx->max_z_index; z++) {
 			struct tile* tl = tile_withrc(ctx, z, x);
 			tl->x = x;
 			tl->z = z;
-			tl->headers = malloc(LAYER_MAX * sizeof( struct list * ));
+			tl->headers = malloc(LAYER_MAX * sizeof(struct list *));
 			memset(tl->headers, 0, LAYER_MAX * sizeof(struct list *));
 		}
 	}
@@ -93,16 +93,16 @@ static inline struct tile*
 tile_withpos(struct aoi_context* ctx, struct location *pos) {
 	int x = pos->x / ctx->tile_cell;
 	int z = pos->z / ctx->tile_cell;
-	if ( x > ctx->max_x_index || z > ctx->max_z_index )
+	if (x > ctx->max_x_index || z > ctx->max_z_index)
 		return NULL;
 	return tile_withrc(ctx, z, x);
 }
 
 static inline link_list_t*
 tile_level(struct tile* tl, int level) {
-	if ( tl->headers[level] == NULL ) {
-		tl->headers[level] = malloc(sizeof( link_list_t ));
-		memset(tl->headers[level], 0, sizeof( link_list_t ));
+	if (tl->headers[level] == NULL) {
+		tl->headers[level] = malloc(sizeof(link_list_t));
+		memset(tl->headers[level], 0, sizeof(link_list_t));
 		tl->headers[level]->head = NULL;
 	}
 	return tl->headers[level];
@@ -112,10 +112,9 @@ static inline void
 tile_push(struct tile* tl, int level, object_t* object) {
 	link_list_t* list = tile_level(tl, level);
 
-	if ( list->head == NULL ) {
+	if (list->head == NULL) {
 		list->head = object;
-	}
-	else {
+	} else {
 		object->next = list->head;
 		list->head->prev = object;
 		list->head = object;
@@ -126,14 +125,14 @@ static inline void
 tile_pop(struct tile* tl, int level, object_t* object) {
 	link_list_t* list = tile_level(tl, level);
 
-	if ( object->prev ) {
+	if (object->prev) {
 		object->prev->next = object->next;
 	}
-	if ( object->next ) {
+	if (object->next) {
 		object->next->prev = object->prev;
 	}
 
-	if ( object == list->head ) {
+	if (object == list->head) {
 		list->head = object->next;
 	}
 	object->prev = object->next = NULL;
@@ -142,7 +141,7 @@ tile_pop(struct tile* tl, int level, object_t* object) {
 static inline int
 get_region(aoi_context_t* ctx, location_t *pos, int range, location_t *bl, location_t *tr) {
 	tile_t *tl = tile_withpos(ctx, pos);
-	if ( tl == NULL )
+	if (tl == NULL)
 		return -1;
 
 	bl->x = tl->x - range;
@@ -150,13 +149,13 @@ get_region(aoi_context_t* ctx, location_t *pos, int range, location_t *bl, locat
 	tr->x = tl->x + range;
 	tr->z = tl->z + range;
 
-	if ( bl->x < 0 )
+	if (bl->x < 0)
 		bl->x = 0;
-	if ( bl->z < 0 )
+	if (bl->z < 0)
 		bl->z = 0;
-	if ( tr->x > ctx->max_x_index )
+	if (tr->x > ctx->max_x_index)
 		tr->x = ctx->max_x_index;
-	if ( tr->z > ctx->max_z_index )
+	if (tr->z > ctx->max_z_index)
 		tr->z = ctx->max_z_index;
 
 	return 0;
@@ -165,8 +164,8 @@ get_region(aoi_context_t* ctx, location_t *pos, int range, location_t *bl, locat
 void
 forearch_list(link_list_t *list, object_t *self, int flag, callback_func func, void* ud) {
 	struct object *cursor = list->head;
-	while ( cursor ) {
-		if ( cursor == self ) {
+	while (cursor) {
+		if (cursor == self) {
 			cursor = cursor->next;
 			continue;
 		}
@@ -185,10 +184,10 @@ aoi_create(int width, int height, int cell, int range, int max, callback_func en
 	int max_x_index = width / cell;
 	int max_z_index = height / cell;
 
-	aoi_context_t* ctx = malloc(sizeof( *ctx ));
-	memset(ctx, 0, sizeof( *ctx ));
+	aoi_context_t* ctx = malloc(sizeof(*ctx));
+	memset(ctx, 0, sizeof(*ctx));
 
-	ctx->pool = pool_create(sizeof( object_t ));
+	ctx->pool = pool_create(sizeof(object_t));
 	ctx->container = container_create(max);
 
 	ctx->width = width;
@@ -196,7 +195,7 @@ aoi_create(int width, int height, int cell, int range, int max, callback_func en
 	ctx->max_x_index = max_x_index;
 	ctx->max_z_index = max_z_index;
 	ctx->tile_cell = cell;
-	ctx->tile_size = ( max_x_index + 1 ) * ( max_z_index + 1 );
+	ctx->tile_size = (max_x_index + 1) * (max_z_index + 1);
 	ctx->range = range;
 	ctx->enter_func = enter_func;
 	ctx->leave_func = leave_func;
@@ -211,12 +210,12 @@ aoi_release(aoi_context_t* ctx) {
 	pool_release(ctx->pool);
 	container_release(ctx->container);
 	int x, z;
-	for ( x = 0; x <= ctx->max_x_index; x++ ) {
-		for ( z = 0; z <= ctx->max_z_index; z++ ) {
+	for (x = 0; x <= ctx->max_x_index; x++) {
+		for (z = 0; z <= ctx->max_z_index; z++) {
 			struct tile* tl = tile_withrc(ctx, z, x);
 			int i;
-			for ( i = 0; i < LAYER_MAX; i++ ) {
-				if ( tl->headers[i] )
+			for (i = 0; i < LAYER_MAX; i++) {
+				if (tl->headers[i])
 					free(tl->headers[i]);
 			}
 			free(tl->headers);
@@ -236,7 +235,7 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
 	}
 
 	object_t* self = pool_malloc(ctx->pool);
-	memset(self, 0, sizeof( *self ));
+	memset(self, 0, sizeof(*self));
 
 	int id = container_add(ctx->container, self);
 
@@ -253,8 +252,8 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
 	struct location tr = { 0, 0 };
 	get_region(ctx, &self->locat, ctx->range, &bl, &tr);
 
-	for ( z = bl.z; z <= tr.z; z++ ) {
-		for ( x = bl.x; x <= tr.x; x++ ) {
+	for (z = bl.z; z <= tr.z; z++) {
+		for (x = bl.x; x <= tr.x; x++) {
 			tile_t *tl = tile_withrc(ctx, z, x);
 
 			if (self->layer == LAYER_ITEM) {
@@ -263,8 +262,7 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
 			} else if (self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_ITEM);
 				forearch_list(list, self, FLAG_SELF, ctx->enter_func, ud);
 
@@ -283,7 +281,7 @@ aoi_enter(aoi_context_t* ctx, int uid, float x, float z, int layer, void* ud) {
 int
 aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 	object_t* self = container_get(ctx->container, id);
-	if ( !self ) {
+	if (!self) {
 		return ERROR_OBJECT_ID;
 	}
 
@@ -294,18 +292,17 @@ aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 	get_region(ctx, &self->locat, ctx->range, &bl, &tr);
 
 	int x, z;
-	for ( z = bl.z; z <= tr.z; z++ ) {
-		for ( x = bl.x; x <= tr.x; x++ ) {
+	for (z = bl.z; z <= tr.z; z++) {
+		for (x = bl.x; x <= tr.x; x++) {
 			struct tile *tl = tile_withrc(ctx, z, x);
-			if ( tl == NULL ) {
+			if (tl == NULL) {
 				return -1;
 			}
-				
+
 			if (self->layer == LAYER_ITEM || self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, ctx->leave_func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_MONSTER);
 				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
 
@@ -327,7 +324,7 @@ aoi_leave(aoi_context_t* ctx, int id, void* ud) {
 int
 aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 	object_t* self = container_get(ctx->container, id);
-	if ( !self ) {
+	if (!self) {
 		return ERROR_OBJECT_ID;
 	}
 
@@ -341,7 +338,7 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 
 	struct tile *otl = tile_withpos(ctx, &op);
 	struct tile *ntl = tile_withpos(ctx, &self->locat);
-	if ( otl == ntl )
+	if (otl == ntl)
 		return 0;
 
 	tile_pop(otl, self->layer, self);
@@ -349,15 +346,15 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 
 	struct location obl, otr;
 	get_region(ctx, &op, ctx->range, &obl, &otr);
-	
+
 	struct location nbl, ntr;
 	get_region(ctx, &self->locat, ctx->range, &nbl, &ntr);
 
 	int array_index = 1;
 
-	for ( z = nbl.z; z <= ntr.z; z++ ) {
-		for ( x = nbl.x; x <= ntr.x; x++ ) {
-			if ( x >= obl.x && x <= otr.x && z >= obl.z && z <= otr.z )
+	for (z = nbl.z; z <= ntr.z; z++) {
+		for (x = nbl.x; x <= ntr.x; x++) {
+			if (x >= obl.x && x <= otr.x && z >= obl.z && z <= otr.z)
 				continue;
 
 			struct tile *tl = tile_withrc(ctx, z, x);
@@ -365,12 +362,10 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 			if (self->layer == LAYER_ITEM) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, ctx->enter_func, ud);
-			}
-			else if (self->layer == LAYER_MONSTER) {
+			} else if (self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->enter_func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_ITEM);
 				forearch_list(list, self, FLAG_SELF, ctx->enter_func, ud);
 
@@ -383,22 +378,20 @@ aoi_update(aoi_context_t* ctx, int id, float x, float z, void* ud) {
 		}
 	}
 
-	for ( z = obl.z; z <= otr.z; z++ ) {
-		for ( x = obl.x; x <= otr.x; x++ ) {
-			if ( x >= nbl.x && x <= ntr.x && z >= nbl.z && z <= ntr.z )
+	for (z = obl.z; z <= otr.z; z++) {
+		for (x = obl.x; x <= otr.x; x++) {
+			if (x >= nbl.x && x <= ntr.x && z >= nbl.z && z <= ntr.z)
 				continue;
 
 			struct tile *tl = tile_withrc(ctx, z, x);
-				
+
 			if (self->layer == LAYER_ITEM) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, ctx->leave_func, ud);
-			}
-			else if (self->layer == LAYER_MONSTER) {
+			} else if (self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER | FLAG_SELF, ctx->leave_func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_ITEM);
 				forearch_list(list, self, FLAG_SELF, ctx->leave_func, ud);
 
@@ -419,7 +412,7 @@ const char* aoi_error(int no) {
 }
 
 int
-get_witness(aoi_context_t* ctx,int id, callback_func func,void* ud) {
+get_witness(aoi_context_t* ctx, int id, callback_func func, void* ud) {
 	object_t* self = container_get(ctx->container, id);
 
 	struct tile *tl = tile_withpos(ctx, &self->locat);
@@ -430,20 +423,18 @@ get_witness(aoi_context_t* ctx,int id, callback_func func,void* ud) {
 	get_region(ctx, &self->locat, ctx->range, &bl, &tr);
 
 	int x, z;
-	for ( z = bl.z; z <= tr.z; z++ ) {
-		for ( x = bl.x; x <= tr.x; x++ ) {
+	for (z = bl.z; z <= tr.z; z++) {
+		for (x = bl.x; x <= tr.x; x++) {
 			struct tile *tl = tile_withrc(ctx, z, x);
 			assert(tl != NULL);
 
 			if (self->layer == LAYER_ITEM) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, func, ud);
-			}
-			else if (self->layer == LAYER_MONSTER) {
+			} else if (self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_MONSTER);
 				forearch_list(list, self, FLAG_OTHER, func, ud);
 
@@ -478,8 +469,7 @@ get_visible(aoi_context_t* ctx, int id, callback_func func, void* ud) {
 			if (self->layer == LAYER_MONSTER) {
 				link_list_t *list = tile_level(tl, LAYER_USER);
 				forearch_list(list, self, FLAG_OTHER, func, ud);
-			}
-			else {
+			} else {
 				link_list_t *list = tile_level(tl, LAYER_MONSTER);
 				forearch_list(list, self, FLAG_OTHER, func, ud);
 

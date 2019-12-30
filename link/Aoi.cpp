@@ -8,8 +8,7 @@
 const GLfloat R = 0.5f;
 const GLfloat pi = 3.1415926536f;
 
-Aoi::Aoi(float x, float z, float speed, AoiContext* context) :m_pos(x, z)
-{
+Aoi::Aoi(float x, float z, float speed, AoiContext* context) :m_pos(x, z) {
 	m_context = context;
 	m_speed = speed;
 	m_radius = 5;
@@ -18,8 +17,7 @@ Aoi::Aoi(float x, float z, float speed, AoiContext* context) :m_pos(x, z)
 	m_object = create_aoi_object(m_context->m_context, m_id);
 }
 
-Aoi::~Aoi()
-{
+Aoi::~Aoi() {
 }
 
 void Aoi::RandomTarget() {
@@ -35,8 +33,7 @@ void Aoi::Update(float interval) {
 	float dt = m_pos.Distance(m_target);
 	if (dt <= 5) {
 		RandomTarget();
-	}
-	else {
+	} else {
 		float dt = m_speed * interval;
 		m_pos.MoveForward(m_target, dt);
 	}
@@ -44,28 +41,22 @@ void Aoi::Update(float interval) {
 
 void Aoi::Draw() {
 	glBegin(GL_POLYGON);
-	if (m_ref > 0)
-	{
+	if (m_ref > 0) {
 		glColor3f(0.0f, 0.5f, 1.0f);
-	}
-	else
-	{
+	} else {
 		glColor3f(0.5f, 1.0f, 1.0f);
 	}
 	int n = 10;
-	for ( int i = 0; i < n; i++ )
-	{
+	for (int i = 0; i < n; i++) {
 		glVertex2f(m_pos.m_x + m_radius*cos(2 * pi / n*i), m_pos.m_z + m_radius*sin(2 * pi / n*i));
 	}
 	glEnd();
 }
 
-void Aoi::Ref()
-{
+void Aoi::Ref() {
 	m_ref++;
 }
 
-void Aoi::DeRef()
-{
+void Aoi::DeRef() {
 	m_ref--;
 }
