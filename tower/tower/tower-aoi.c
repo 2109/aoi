@@ -40,18 +40,9 @@ typedef struct object {
 #endif
 
 	struct object* next;
+	struct object* prev;
 
-	union {
-		struct {
-			int range;
-			struct object* next;
-			struct object* prev;
-		} trigger;
-		struct {
-			struct object* next;
-			struct object* prev;
-		} entity;
-	} param;
+	int range;
 } object_t;
 
 typedef struct region {
@@ -62,7 +53,7 @@ typedef struct region {
 } region_t;
 
 typedef struct tower {
-	struct object* head;
+	struct object head;
 	hash_t* hash;
 } tower_t;
 
@@ -83,14 +74,12 @@ typedef struct aoi {
 } aoi_t;
 
 
-static inline void
-translate(aoi_t* aoi, location_t* in, location_t* out) {
+static inline void translate(aoi_t* aoi, location_t* in, location_t* out) {
 	out->x = in->x / aoi->cell;
 	out->z = in->z / aoi->cell;
 }
 
-static inline void
-get_region(aoi_t* aoi, location_t* local, region_t* out, uint32_t range) {
+static inline void get_region(aoi_t* aoi, location_t* local, region_t* out, uint32_t range) {
 	if (local->x - range < 0) {
 		out->begin_x = 0;
 		out->end_x = local->x + range;
@@ -134,17 +123,14 @@ get_region(aoi_t* aoi, location_t* local, region_t* out, uint32_t range) {
 	}
 }
 
-static inline object_t*
-new_object(aoi_t* aoi, int uid, int type, float x, float z) {
+static inline object_t* new_object(aoi_t* aoi, int uid, int type, float x, float z) {
 	if (aoi->freelist == NULL) {
 		return NULL;
 	}
 	object_t* obj = aoi->freelist;
 	aoi->freelist = obj->next;
-	obj->next = NULL;
-	obj->param.entity.prev = obj->param.entity.next = NULL;
-	obj->param.trigger.prev = obj->param.trigger.next = NULL;
-	obj->param.trigger.range = 0;
+	obj->prev = obj->next = NULL;
+	obj->range = 0;
 	obj->uid = uid;
 	obj->type = type;
 	obj->local.x = x;
@@ -152,40 +138,29 @@ new_object(aoi_t* aoi, int uid, int type, float x, float z) {
 	return obj;
 }
 
-static inline void
-free_object(aoi_t* aoi, object_t* obj) {
+static inline void free_object(aoi_t* aoi, object_t* obj) {
 	obj->next = aoi->freelist;
 	aoi->freelist = obj;
 }
 
-static inline void
-link_entity(tower_t* tower, object_t* object) {
-	if (tower->head == NULL) {
-		tower->head = object;
-	} else {
-		tower->head->param.entity.prev = object;
-		object->param.entity.prev = NULL;
-		object->param.entity.next = tower->head;
-		tower->head = object;
-	}
+static inline void list_add(object_t* head, object_t* object) {
+	object_t* prev = head->prev;
+	prev->next = object;
+	object->next = head;
+	object->prev = prev;
+	head->prev = object;
 }
 
-static inline void
-unlink_entity(tower_t* tower, object_t* object) {
-	if (object->param.entity.prev != NULL) {
-		object->param.entity.prev->param.entity.next = object->param.entity.next;
-	} else {
-		tower->head = object->param.entity.next;
-	}
-	if (object->param.entity.next != NULL) {
-		object->param.entity.next->param.entity.prev = object->param.entity.prev;
-	}
-	object->param.entity.prev = NULL;
-	object->param.entity.next = NULL;
+static inline void list_remove(object_t* object) {
+	object_t* next = object->next;
+	object_t* prev = object->prev;
+	next->prev = prev;
+	prev->next = next;
+	object->prev = NULL;
+	object->next = NULL;
 }
 
-static inline struct object*
-get_object(aoi_t* aoi, int id, int type) {
+static inline struct object* get_object(aoi_t* aoi, int id, int type) {
 	if (id < 0 || id >= aoi->max)
 		return NULL;
 
@@ -196,28 +171,25 @@ get_object(aoi_t* aoi, int id, int type) {
 	return result;
 }
 
-static inline void
-assert_position(aoi_t* aoi, float x, float z) {
+static inline void assert_position(aoi_t* aoi, float x, float z) {
 	if (x < 0 || z < 0 || x > aoi->width || z > aoi->height) {
 		assert(0);
 	}
 }
 
-int
-create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) {
+int create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) {
 	assert_position(aoi, x, z);
 
 	object_t* entity = new_object(aoi, uid, TYPE_ENTITY, x, z);
+
 	location_t out;
 	translate(aoi, &entity->local, &out);
 
 	tower_t* tower = &aoi->towers[(uint32_t)out.x][(uint32_t)out.z];
 
-	link_entity(tower, entity);
-
+	list_add(&tower->head, entity);
 
 	entity->witness = hash_set_new();
-
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
@@ -231,8 +203,7 @@ create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* ud) 
 	return entity->id;
 }
 
-void
-remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
+void remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	object_t* entity = get_object(aoi, id, TYPE_ENTITY);
 
 	location_t out;
@@ -240,7 +211,7 @@ remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 
 	tower_t* tower = &aoi->towers[(uint32_t)out.x][(uint32_t)out.z];
 
-	unlink_entity(tower, entity);
+	list_remove(entity);
 
 	khiter_t k;
 	object_t* other;
@@ -255,8 +226,7 @@ remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	return;
 }
 
-void
-move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void* enter_ud, leave_func leave_func, void* leave_ud) {
+void move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void* enter_ud, leave_func leave_func, void* leave_ud) {
 	assert_position(aoi, nx, nz);
 
 	object_t* entity = get_object(aoi, id, TYPE_ENTITY);
@@ -274,85 +244,62 @@ move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, void*
 		return;
 	}
 
-	unlink_entity(otower, entity);
+	list_remove(entity);
 
-	link_entity(ntower, entity);
+	list_add(&ntower->head, entity);
 
+	object_t leave;
+	leave.next = leave.prev = &leave;
+	object_t enter;
+	enter.next = enter.prev = &enter;
 	khiter_t k;
-	object_t* leave = NULL;
-	object_t* enter = NULL;
 	object_t* other;
 
 	hash_foreach(otower->hash, k, other, {
+		(void)k;
 		if (other->uid != entity->uid) {
-			if (leave == NULL) {
-				leave = other;
-				other->param.trigger.next = NULL;
-				other->param.trigger.prev = NULL;
-			} else {
-				leave->param.trigger.prev = other;
-				other->param.trigger.next = leave;
-				leave = other;
-			}
+			list_add(&leave, other);
 		}
 	});
 
 	hash_foreach(ntower->hash, k, other, {
 		if (other->uid != entity->uid) {
-			if (other->param.trigger.next != NULL || other->param.trigger.prev != NULL || other == leave) {
-				if (other->param.trigger.prev != NULL) {
-					other->param.trigger.prev->param.trigger.next = other->param.trigger.next;
-				}
-				if (other->param.trigger.next != NULL) {
-					other->param.trigger.next->param.trigger.prev = other->param.trigger.prev;
-				}
-				if (other == leave) {
-					leave = other->param.trigger.next;
-				}
-				other->param.trigger.next = other->param.trigger.prev = NULL;
+			if (other->next != NULL || other->prev != NULL) {
+				list_remove(other);
 			} else {
-				if (enter == NULL) {
-					enter = other;
-					other->param.trigger.next = NULL;
-					other->param.trigger.prev = NULL;
-				} else {
-					other->param.trigger.next = enter;
-					enter = other;
-				}
+				list_add(&enter, other);
 			}
 		}
 	});
 
-	object_t* cursor = leave;
-	while (cursor != NULL) {
+	object_t* cursor = leave.next;
+	for (; cursor != &leave;) {
 		object_t* obj = cursor;
-		cursor = cursor->param.trigger.next;
 		leave_func(entity->uid, obj->uid, leave_ud);
-		obj->param.trigger.next = obj->param.trigger.prev = NULL;
-
+		cursor = cursor->next;
+		obj->next = obj->prev = NULL;
 		hash_set_del(entity->witness, obj->uid, entity->uid, "entity witness");
 		hash_set_del(obj->visible, entity->uid, obj->uid, "trigger visible");
 	}
 
-	cursor = enter;
-	while (cursor != NULL) {
+	cursor = enter.next;
+	for (; cursor != &enter;) {
 		object_t* obj = cursor;
-		cursor = cursor->param.trigger.next;
+		cursor = cursor->next;
 		enter_func(entity->uid, obj->uid, enter_ud);
-		obj->param.trigger.next = obj->param.trigger.prev = NULL;
-
+		obj->next = obj->prev = NULL;
 		hash_set_put(entity->witness, obj->uid, entity->uid, "entity witness");
 		hash_set_put(obj->visible, entity->uid, obj->uid, "trigger visible");
 	}
 }
 
-int
-create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func, void* ud) {
+int create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func, void* ud) {
 	assert_position(aoi, x, z);
 
 	object_t* trigger = new_object(aoi, uid, TYPE_TRIGGER, x, z);
-	trigger->param.trigger.range = range;
 	trigger->visible = hash_set_new();
+
+	trigger->range = range;
 
 	location_t out;
 	translate(aoi, &trigger->local, &out);
@@ -368,31 +315,28 @@ create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func func
 
 			hash_set(tower->hash, trigger->uid, trigger);
 
-			struct object* cursor = tower->head;
-			while (cursor) {
+			struct object* cursor = tower->head.next;
+			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					func(trigger->uid, cursor->uid, ud);
-
 					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
 					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
 
 				}
-				cursor = cursor->param.entity.next;
 			}
 		}
 	}
 	return trigger->id;
 }
 
-void
-remove_trigger(aoi_t* aoi, int id) {
+void remove_trigger(aoi_t* aoi, int id) {
 	object_t* trigger = get_object(aoi, id, TYPE_TRIGGER);
 
 	location_t out;
 	translate(aoi, &trigger->local, &out);
 
 	region_t region;
-	get_region(aoi, &out, &region, trigger->param.trigger.range);
+	get_region(aoi, &out, &region, trigger->range);
 
 	uint32_t x_index;
 	for (x_index = region.begin_x; x_index <= region.end_x; x_index++) {
@@ -406,8 +350,7 @@ remove_trigger(aoi_t* aoi, int id) {
 	free_object(aoi, trigger);
 }
 
-void
-move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud) {
+void move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* enter_ud, leave_func leave, void* leave_ud) {
 	assert_position(aoi, nx, nz);
 
 	object_t* trigger = get_object(aoi, id, TYPE_TRIGGER);
@@ -425,10 +368,10 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 	}
 
 	region_t oregion;
-	get_region(aoi, &oout, &oregion, trigger->param.trigger.range);
+	get_region(aoi, &oout, &oregion, trigger->range);
 
 	region_t nregion;
-	get_region(aoi, &nout, &nregion, trigger->param.trigger.range);
+	get_region(aoi, &nout, &nregion, trigger->range);
 
 	uint32_t x_index;
 	for (x_index = oregion.begin_x; x_index <= oregion.end_x; x_index++) {
@@ -440,14 +383,13 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 			tower_t* tower = &aoi->towers[x_index][z_index];
 			hash_del(tower->hash, trigger->uid);
 
-			struct object* cursor = tower->head;
-			while (cursor) {
+			struct object* cursor = tower->head.next;
+			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					leave(trigger->uid, cursor->uid, leave_ud);
 					hash_set_del(cursor->witness, trigger->uid, cursor->uid, "entity witness");
 					hash_set_del(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
 				}
-				cursor = cursor->param.entity.next;
 			}
 		}
 	}
@@ -463,21 +405,19 @@ move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void* ent
 
 			hash_set(tower->hash, trigger->uid, trigger);
 
-			struct object* cursor = tower->head;
-			while (cursor) {
+			struct object* cursor = tower->head.next;
+			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					enter(trigger->uid, cursor->uid, enter_ud);
 					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
 					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
 				}
-				cursor = cursor->param.entity.next;
 			}
 		}
 	}
 }
 
-void
-release_aoi(aoi_t* aoi) {
+void release_aoi(aoi_t* aoi) {
 	uint32_t x;
 	for (x = 0; x < aoi->tower_x; x++) {
 		uint32_t z;
@@ -492,8 +432,7 @@ release_aoi(aoi_t* aoi) {
 	free(aoi);
 }
 
-aoi_t*
-create_aoi(int max, int width, int height, int cell) {
+aoi_t* create_aoi(int max, int width, int height, int cell) {
 	aoi_t* aoi_ctx = (aoi_t*)malloc(sizeof(aoi_t));
 	memset(aoi_ctx, 0, sizeof(*aoi_ctx));
 
@@ -531,15 +470,15 @@ create_aoi(int max, int width, int height, int cell) {
 		uint32_t z;
 		for (z = 0; z < aoi_ctx->tower_z; z++) {
 			tower_t* tower = &aoi_ctx->towers[x][z];
-			tower->head = NULL;
+			tower->head.prev = &tower->head;
+			tower->head.next = &tower->head;
 			tower->hash = hash_new();
 		}
 	}
 	return aoi_ctx;
 }
 
-void
-get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
+void get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
 	object_t* entity = get_object(aoi, id, TYPE_ENTITY);
 
 	location_t out;
@@ -551,57 +490,53 @@ get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
 	object_t* other;
 
 	hash_foreach(tower->hash, k, other, {
+		(void)k;
 		if (other->uid != entity->uid) {
 			func(other->uid, ud);
 		}
 	});
 }
 
-void
-get_visible(struct aoi* aoi, int id, callback_func func, void* ud) {
+void get_visible(struct aoi* aoi, int id, callback_func func, void* ud) {
 	object_t* trigger = get_object(aoi, id, TYPE_TRIGGER);
 
 	location_t out;
 	translate(aoi, &trigger->local, &out);
 
 	region_t region;
-	get_region(aoi, &out, &region, trigger->param.trigger.range);
+	get_region(aoi, &out, &region, trigger->range);
 
 	uint32_t x_index;
 	for (x_index = region.begin_x; x_index <= region.end_x; x_index++) {
 		uint32_t z_index;
 		for (z_index = region.begin_z; z_index <= region.end_z; z_index++) {
 			tower_t* tower = &aoi->towers[x_index][z_index];
-			struct object* cursor = tower->head;
-			while (cursor) {
+			struct object* cursor = tower->head.next;
+			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (trigger->uid != cursor->uid) {
 					func(cursor->uid, ud);
 				}
-				cursor = cursor->param.trigger.next;
 			}
 		}
 	}
 }
 
-void
-foreach_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
+void foreach_entity(aoi_t* aoi, foreach_entity_func func, void* ud) {
 	uint32_t x;
 	for (x = 0; x < aoi->tower_x; x++) {
 		uint32_t z;
 		for (z = 0; z < aoi->tower_z; z++) {
 			tower_t* tower = &aoi->towers[x][z];
-			object_t* cursor = tower->head;
-			while (cursor != NULL) {
+			struct object* cursor = tower->head.next;
+			for (; cursor != &tower->head; cursor = cursor->next) {
 				object_t* entity = cursor;
 				func(entity->uid, entity->local.x, entity->local.z, ud);
-				cursor = cursor->param.entity.next;
 			}
 		}
 	}
 }
 
-void
-foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
+void foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 	hash_t* hash = hash_new();
 
 	uint32_t x;
@@ -612,6 +547,7 @@ foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 			khiter_t k;
 			object_t* trigger;
 			hash_foreach(tower->hash, k, trigger, {
+				(void)k;
 				if (!hash_has(hash, trigger->uid)) {
 					hash_set(hash, trigger->uid, trigger);
 				}
@@ -622,7 +558,8 @@ foreach_trigger(aoi_t* aoi, foreach_trigger_func func, void* ud) {
 	khiter_t k;
 	object_t* trigger;
 	hash_foreach(hash, k, trigger, {
-		func(trigger->uid, trigger->local.x, trigger->local.z, trigger->param.trigger.range, ud);
+		(void)k;
+		func(trigger->uid, trigger->local.x, trigger->local.z, trigger->range, ud);
 	});
 	hash_free(hash);
 }
