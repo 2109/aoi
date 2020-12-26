@@ -43,12 +43,10 @@ typedef struct aoi_object {
 	int uid;
 
 	struct aoi_entity* entity;
-	callback_func entity_enter_func;
-	callback_func entity_leave_func;
-
 	struct aoi_trigger* trigger;
-	callback_func trigger_enter_func;
-	callback_func trigger_leave_func;
+	callback_func enter_func;
+	callback_func leave_func;
+	void* ud;
 
 	int inout;
 } aoi_object_t;
@@ -347,7 +345,7 @@ static void trigger_high_bound_shuffle_z(aoi_context_t* ctx, linknode_t* node, i
 	}
 }
 
-static void shuffle_entity(aoi_context_t* ctx, aoi_entity_t* entity, int x, int z, void* ud) {
+static void shuffle_entity(aoi_context_t* ctx, aoi_entity_t* entity, int x, int z) {
 	entity->ocenter = entity->center;
 
 	entity->center.x = x;
@@ -359,7 +357,7 @@ static void shuffle_entity(aoi_context_t* ctx, aoi_entity_t* entity, int x, int 
 	aoi_object_t* owner = entity->node[0].owner;
 
 	for (aoi_object_t* node = ctx->enter_list.next; node != &ctx->enter_list; ) {
-		owner->entity_enter_func(owner->uid, node->uid, ud);
+		node->enter_func(node->uid, owner->uid, node->ud);
 #ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_put(entity->witness, node->uid);
 #endif
@@ -375,7 +373,7 @@ static void shuffle_entity(aoi_context_t* ctx, aoi_entity_t* entity, int x, int 
 	ctx->enter_list.prev = ctx->enter_list.next = &ctx->enter_list;
 
 	for (aoi_object_t* node = ctx->leave_list.next; node != &ctx->leave_list; ) {
-		owner->entity_leave_func(owner->uid, node->uid, ud);
+		node->leave_func(node->uid, owner->uid, node->ud);
 #ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_del(entity->witness, node->uid);
 #endif
@@ -391,7 +389,7 @@ static void shuffle_entity(aoi_context_t* ctx, aoi_entity_t* entity, int x, int 
 	ctx->leave_list.prev = ctx->leave_list.next = &ctx->leave_list;
 }
 
-static void shuffle_trigger(aoi_context_t* ctx, aoi_trigger_t* trigger, int x, int z, void* ud) {
+static void shuffle_trigger(aoi_context_t* ctx, aoi_trigger_t* trigger, int x, int z) {
 	trigger->ocenter = trigger->center;
 
 	trigger->center.x = x;
@@ -415,7 +413,7 @@ static void shuffle_trigger(aoi_context_t* ctx, aoi_trigger_t* trigger, int x, i
 
 	aoi_object_t* owner = trigger->node[0].owner;
 	for (aoi_object_t* node = ctx->enter_list.next; node != &ctx->enter_list; ) {
-		owner->trigger_enter_func(owner->uid, node->uid, ud);
+		owner->enter_func(owner->uid, node->uid, owner->ud);
 #ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_put(node->entity->witness, owner->uid);
 #endif // LINKAOI_HAVE_RESTORE_WITNESS
@@ -432,7 +430,7 @@ static void shuffle_trigger(aoi_context_t* ctx, aoi_trigger_t* trigger, int x, i
 	ctx->enter_list.prev = ctx->enter_list.next = &ctx->enter_list;
 
 	for (aoi_object_t* node = ctx->leave_list.next; node != &ctx->leave_list; ) {
-		owner->trigger_leave_func(owner->uid, node->uid, ud);
+		owner->leave_func(owner->uid, node->uid, owner->ud);
 #ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_del(node->entity->witness, owner->uid);
 #endif // LINKAOI_HAVE_RESTORE_WITNESS
@@ -448,15 +446,12 @@ static void shuffle_trigger(aoi_context_t* ctx, aoi_trigger_t* trigger, int x, i
 	ctx->leave_list.prev = ctx->leave_list.next = &ctx->leave_list;
 }
 
-int create_entity(aoi_context_t* ctx, aoi_object_t* object, int x, int z, callback_func enter_func, callback_func leave_func, void* ud) {
+int create_entity(aoi_context_t* ctx, aoi_object_t* object, int x, int z) {
 	if (object->entity) {
 		return -1;
 	}
 	object->entity = malloc(sizeof(aoi_entity_t));
 	memset(object->entity, 0, sizeof(aoi_entity_t));
-
-	object->entity_enter_func = enter_func;
-	object->entity_leave_func = leave_func;
 
 #ifdef LINKAOI_HAVE_RESTORE_WITNESS
 	object->entity->witness = hash_set_new();
@@ -485,7 +480,7 @@ int create_entity(aoi_context_t* ctx, aoi_object_t* object, int x, int z, callba
 	insert_node(ctx, 1, &object->entity->node[0]);
 	insert_node(ctx, 0, &object->entity->node[1]);
 
-	shuffle_entity(ctx, object->entity, x, z, ud);
+	shuffle_entity(ctx, object->entity, x, z);
 	return 0;
 }
 
@@ -500,8 +495,9 @@ int create_trigger(aoi_context_t* ctx, aoi_object_t* object, int x, int z, int r
 	object->trigger->visible = hash_set_new();
 #endif
 
-	object->trigger_enter_func = enter_func;
-	object->trigger_leave_func = leave_func;
+	object->enter_func = enter_func;
+	object->leave_func = leave_func;
+	object->ud = ud;
 
 	object->trigger->range = range;
 
@@ -548,18 +544,18 @@ int create_trigger(aoi_context_t* ctx, aoi_object_t* object, int x, int z, int r
 	insert_node(ctx, 0, &object->trigger->node[1]);
 	insert_node(ctx, 0, &object->trigger->node[3]);
 
-	shuffle_trigger(ctx, object->trigger, x, z, ud);
+	shuffle_trigger(ctx, object->trigger, x, z);
 
 	return 0;
 }
 
-int delete_entity(aoi_context_t* ctx, aoi_object_t* object, int shuffle, void* ud) {
+int delete_entity(aoi_context_t* ctx, aoi_object_t* object, int shuffle) {
 	if (!object->entity) {
 		return -1;
 	}
 
 	if (shuffle) {
-		shuffle_entity(ctx, object->entity, UNLIMITED, UNLIMITED, ud);
+		shuffle_entity(ctx, object->entity, UNLIMITED, UNLIMITED);
 	}
 
 	remove_node(&object->entity->node[0]);
@@ -590,12 +586,12 @@ int delete_trigger(aoi_context_t* ctx, aoi_object_t* object) {
 	return 0;
 }
 
-void move_entity(aoi_context_t* ctx, aoi_object_t* object, int x, int z, void* ud) {
-	shuffle_entity(ctx, object->entity, x, z, ud);
+void move_entity(aoi_context_t* ctx, aoi_object_t* object, int x, int z) {
+	shuffle_entity(ctx, object->entity, x, z);
 }
 
-void move_trigger(aoi_context_t* ctx, aoi_object_t* object, int x, int z, void* ud) {
-	shuffle_trigger(ctx, object->trigger, x, z, ud);
+void move_trigger(aoi_context_t* ctx, aoi_object_t* object, int x, int z) {
+	shuffle_trigger(ctx, object->trigger, x, z);
 }
 
 aoi_context_t* create_aoi_ctx() {
@@ -628,7 +624,7 @@ aoi_object_t* create_aoi_object(aoi_context_t* ctx, int uid) {
 
 void release_aoi_object(aoi_context_t* ctx, aoi_object_t* object) {
 	delete_trigger(ctx, object);
-	delete_entity(ctx, object, 0, NULL);
+	delete_entity(ctx, object, 0);
 	object->next = ctx->freelist;
 	ctx->freelist = object;
 }
