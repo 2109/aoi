@@ -11,12 +11,12 @@ AoiTrigger::~AoiTrigger() {
 }
 
 void AoiTrigger::Enter() {
-	create_trigger(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z, m_range, AoiContext::OnTriggerEnter, AoiContext::OnTriggerLeave, m_context);
+	create_trigger(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z, m_range, AoiContext::OnEntityEnter, AoiContext::OnEntityLeave, m_context);
 }
 
 void AoiTrigger::Update(float interval) {
 	Aoi::Update(interval);
-	move_trigger(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z, m_context);
+	move_trigger(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z);
 }
 
 void AoiTrigger::Draw() {

@@ -35,20 +35,10 @@ void AoiContext::CreateEntity() {
 
 void AoiContext::OnEntityEnter(int self, int other, void* ud) {
 	AoiContext* inst = (AoiContext*)ud;
-	inst->RefEntity(self);
-}
-
-void AoiContext::OnEntityLeave(int self, int other, void* ud) {
-	AoiContext* inst = (AoiContext*)ud;
-	inst->DeRefEntity(self);
-}
-
-void AoiContext::OnTriggerEnter(int self, int other, void* ud) {
-	AoiContext* inst = (AoiContext*)ud;
 	inst->RefEntity(other);
 }
 
-void AoiContext::OnTriggerLeave(int self, int other, void* ud) {
+void AoiContext::OnEntityLeave(int self, int other, void* ud) {
 	AoiContext* inst = (AoiContext*)ud;
 	inst->DeRefEntity(other);
 }
@@ -59,9 +49,7 @@ void AoiContext::RefEntity(int uid) {
 		Aoi* aoi = iter->second;
 		aoi->Ref();
 	} else {
-		std::map<int, Aoi*>::iterator iter = m_trigger_list.find(uid);
-		Aoi* aoi = iter->second;
-		aoi->Ref();
+		assert(0);
 	}
 
 }
@@ -72,9 +60,7 @@ void AoiContext::DeRefEntity(int uid) {
 		Aoi* aoi = iter->second;
 		aoi->DeRef();
 	} else {
-		std::map<int, Aoi*>::iterator iter = m_trigger_list.find(uid);
-		Aoi* aoi = iter->second;
-		aoi->DeRef();
+		assert(0);
 	}
 }
 

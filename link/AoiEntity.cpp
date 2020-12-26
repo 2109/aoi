@@ -12,12 +12,12 @@ AoiEntity::~AoiEntity() {
 }
 
 void AoiEntity::Enter() {
-	create_entity(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z, AoiContext::OnEntityEnter, AoiContext::OnEntityLeave, m_context);
+	create_entity(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z);
 }
 
 void AoiEntity::Update(float interval) {
 	Aoi::Update(interval);
-	move_entity(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z, m_context);
+	move_entity(m_context->m_context, m_object, m_pos.m_x, m_pos.m_z);
 }
 
 void AoiEntity::Draw() {

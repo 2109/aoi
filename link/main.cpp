@@ -26,16 +26,16 @@ void TimerFunc(int id) {
 }
 
 int main() {
-	int width = 1024;
-	int height = 500;
+	int width = 1680;
+	int height = 950;
 
 	AoiContext* context = new AoiContext(width, height, 50);
 	g_context = context;
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 5000; i++) {
 		context->CreateEntity();
 	}
 
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 1000; i++) {
 		context->CreateTrigger();;
 	}
 
