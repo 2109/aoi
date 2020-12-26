@@ -16,8 +16,8 @@
 #define IN -1
 #define OUT 1
 
-#define LINKAOI_CHECK_WITNESS
-#define LINKAOI_CHECK_VISIBLE
+#define LINKAOI_HAVE_RESTORE_WITNESS
+#define LINKAOI_HAVE_RESTORE_VISIBLE
 
 #ifdef _WIN32
 #define inline __inline
@@ -25,6 +25,10 @@
 
 struct aoi_entity;
 struct aoi_trigger;
+struct aoi_context;
+struct linknode;
+
+typedef void(*shuffle_func)(struct aoi_context*, struct linknode*, int);
 
 typedef struct position {
 	int x;
@@ -53,6 +57,7 @@ typedef struct linknode {
 	struct linknode* prev;
 	struct linknode* next;
 	position_t pos;
+	shuffle_func shuffle;
 	uint8_t flag;
 	int8_t order;
 } linknode_t;
@@ -61,7 +66,7 @@ typedef struct aoi_entity {
 	position_t center;
 	position_t ocenter;
 	linknode_t node[2];
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 	hash_set_t* witness;
 #endif
 } aoi_entity_t;
@@ -71,7 +76,7 @@ typedef struct aoi_trigger {
 	position_t ocenter;
 	linknode_t node[4];
 	int range;
-#ifdef LINKAOI_CHECK_VISIBLE
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 	hash_set_t* visible;
 #endif
 } aoi_trigger_t;
@@ -125,6 +130,7 @@ static inline void exchange_node(linknode_t* lhs, linknode_t* rhs) {
 	lhs->next = next;
 	next->prev = lhs;
 }
+
 
 typedef int(*cmp_func)(position_t*, position_t*);
 
@@ -188,130 +194,157 @@ static inline void link_leave_list(aoi_context_t* aoi_ctx, aoi_object_t* self, a
 	other->inout = OUT;
 }
 
-static void shuffle_x(aoi_context_t* aoi_ctx, linknode_t* node, int x) {
+static void entity_shuffle_x(aoi_context_t* aoi_ctx, linknode_t* node, int x) {
 	node->pos.x = x;
 	linknode_t* link = &aoi_ctx->linklist[0];
 	if (link->next == link) {
 		return;
 	}
 
-	if (node->flag & AOI_ENTITY) {
-		while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
+	while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
 
-			if (other->flag & AOI_LOW_BOUND) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
-			} else if (other->flag & AOI_HIGH_BOUND) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
-			}
+		if (other->flag & AOI_LOW_BOUND) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
+		} else if (other->flag & AOI_HIGH_BOUND) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
 		}
+	}
 
-		while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
+	while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
 
-			if (other->flag & AOI_LOW_BOUND) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
-			} else if (other->flag & AOI_HIGH_BOUND) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
-			}
-		}
-	} else if (node->flag & AOI_LOW_BOUND) {
-		while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
-			if (other->flag & AOI_ENTITY) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
-			}
-		}
-
-		while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
-			if (other->flag & AOI_ENTITY) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
-			}
-		}
-	} else if (node->flag & AOI_HIGH_BOUND) {
-		while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
-			if (other->flag & AOI_ENTITY) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
-			}
-		}
-
-		while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
-			if (other->flag & AOI_ENTITY) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
-			}
+		if (other->flag & AOI_LOW_BOUND) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
+		} else if (other->flag & AOI_HIGH_BOUND) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 1);
 		}
 	}
 }
 
-static void shuffle_z(aoi_context_t* aoi_ctx, linknode_t* node, int z) {
+static void entity_shuffle_z(aoi_context_t* aoi_ctx, linknode_t* node, int z) {
+	node->pos.z = z;
+	linknode_t* link = &aoi_ctx->linklist[1];
+	if (link->next == link) {
+		return;
+	}
+	while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
+
+		if (other->flag & AOI_LOW_BOUND) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
+		} else if (other->flag & AOI_HIGH_BOUND) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
+		}
+	}
+
+	while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
+
+		if (other->flag & AOI_LOW_BOUND) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
+		} else if (other->flag & AOI_HIGH_BOUND) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
+		}
+	}
+}
+
+static void trigger_low_bound_shuffle_x(aoi_context_t* aoi_ctx, linknode_t* node, int x) {
+	node->pos.x = x;
+	linknode_t* link = &aoi_ctx->linklist[0];
+	if (link->next == link) {
+		return;
+	}
+
+	while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
+		if (other->flag & AOI_ENTITY) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
+		}
+	}
+
+	while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
+		if (other->flag & AOI_ENTITY) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
+		}
+	}
+}
+
+static void trigger_low_bound_shuffle_z(aoi_context_t* aoi_ctx, linknode_t* node, int z) {
 	node->pos.z = z;
 	linknode_t* link = &aoi_ctx->linklist[1];
 	if (link->next == link) {
 		return;
 	}
 
-	if (node->flag & AOI_ENTITY) {
-		while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
-
-			if (other->flag & AOI_LOW_BOUND) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
-			} else if (other->flag & AOI_HIGH_BOUND) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
-			}
+	while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
+		if (other->flag & AOI_ENTITY) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
 		}
+	}
 
-		while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
+	while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
+		if (other->flag & AOI_ENTITY) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
+		}
+	}
+}
 
-			if (other->flag & AOI_LOW_BOUND) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
-			} else if (other->flag & AOI_HIGH_BOUND) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 1);
-			}
-		}
-	} else if (node->flag & AOI_LOW_BOUND) {
-		while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
-			if (other->flag & AOI_ENTITY) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
-			}
-		}
+static void trigger_high_bound_shuffle_x(aoi_context_t* aoi_ctx, linknode_t* node, int x) {
+	node->pos.x = x;
+	linknode_t* link = &aoi_ctx->linklist[0];
+	if (link->next == link) {
+		return;
+	}
 
-		while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
-			if (other->flag & AOI_ENTITY) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
-			}
+	while (node->prev != link && ((node->pos.x < node->prev->pos.x) || (node->pos.x == node->prev->pos.x && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
+		if (other->flag & AOI_ENTITY) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
 		}
-	} else if (node->flag & AOI_HIGH_BOUND) {
-		while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
-			linknode_t* other = node->prev;
-			exchange_node(node->prev, node);
-			if (other->flag & AOI_ENTITY) {
-				link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
-			}
-		}
+	}
 
-		while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
-			linknode_t* other = node->next;
-			exchange_node(node, node->next);
-			if (other->flag & AOI_ENTITY) {
-				link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
-			}
+	while (node->next != link && ((node->pos.x > node->next->pos.x) || (node->pos.x == node->next->pos.x && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
+		if (other->flag & AOI_ENTITY) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_z_range, 0);
+		}
+	}
+}
+
+static void trigger_high_bound_shuffle_z(aoi_context_t* aoi_ctx, linknode_t* node, int z) {
+	node->pos.z = z;
+	linknode_t* link = &aoi_ctx->linklist[1];
+	if (link->next == link) {
+		return;
+	}
+
+	while (node->prev != link && ((node->pos.z < node->prev->pos.z) || (node->pos.z == node->prev->pos.z && node->order <= node->prev->order))) {
+		linknode_t* other = node->prev;
+		exchange_node(node->prev, node);
+		if (other->flag & AOI_ENTITY) {
+			link_leave_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
+		}
+	}
+
+	while (node->next != link && ((node->pos.z > node->next->pos.z) || (node->pos.z == node->next->pos.z && node->order >= node->next->order))) {
+		linknode_t* other = node->next;
+		exchange_node(node, node->next);
+		if (other->flag & AOI_ENTITY) {
+			link_enter_list(aoi_ctx, node->owner, other->owner, dt_x_range, 0);
 		}
 	}
 }
@@ -322,17 +355,17 @@ static void shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, 
 	entity->center.x = x;
 	entity->center.z = z;
 
-	shuffle_x(aoi_ctx, &entity->node[0], x);
-	shuffle_z(aoi_ctx, &entity->node[1], z);
+	entity->node[0].shuffle(aoi_ctx, &entity->node[0], x);
+	entity->node[1].shuffle(aoi_ctx, &entity->node[1], z);
 
 	aoi_object_t* owner = entity->node[0].owner;
 
 	for (aoi_object_t* node = aoi_ctx->enter_list.next; node != &aoi_ctx->enter_list; ) {
 		owner->entity_enter_func(owner->uid, node->uid, ud);
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_put(entity->witness, node->uid);
 #endif
-#ifdef LINKAOI_CHECK_VISIBLE
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 		hash_set_put(node->trigger->visible, owner->uid);
 #endif
 		aoi_object_t* tmp = node;
@@ -345,10 +378,10 @@ static void shuffle_entity(aoi_context_t* aoi_ctx, aoi_entity_t* entity, int x, 
 
 	for (aoi_object_t* node = aoi_ctx->leave_list.next; node != &aoi_ctx->leave_list; ) {
 		owner->entity_leave_func(owner->uid, node->uid, ud);
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_del(entity->witness, node->uid);
 #endif
-#ifdef LINKAOI_CHECK_VISIBLE
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 		hash_set_del(node->trigger->visible, owner->uid);
 #endif
 		aoi_object_t* tmp = node;
@@ -367,29 +400,29 @@ static void shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int 
 	trigger->center.z = z;
 
 	if (trigger->ocenter.x < x) {
-		shuffle_x(aoi_ctx, &trigger->node[2], x + trigger->range);
-		shuffle_x(aoi_ctx, &trigger->node[0], x - trigger->range);
+		trigger->node[2].shuffle(aoi_ctx, &trigger->node[2], x + trigger->range);
+		trigger->node[0].shuffle(aoi_ctx, &trigger->node[0], x - trigger->range);
 	} else {
-		shuffle_x(aoi_ctx, &trigger->node[0], x - trigger->range);
-		shuffle_x(aoi_ctx, &trigger->node[2], x + trigger->range);
+		trigger->node[0].shuffle(aoi_ctx, &trigger->node[0], x - trigger->range);
+		trigger->node[2].shuffle(aoi_ctx, &trigger->node[2], x + trigger->range);
 	}
 
 	if (trigger->ocenter.z < z) {
-		shuffle_z(aoi_ctx, &trigger->node[3], z + trigger->range);
-		shuffle_z(aoi_ctx, &trigger->node[1], z - trigger->range);
+		trigger->node[3].shuffle(aoi_ctx, &trigger->node[3], z + trigger->range);
+		trigger->node[1].shuffle(aoi_ctx, &trigger->node[1], z - trigger->range);
 	} else {
-		shuffle_z(aoi_ctx, &trigger->node[1], z - trigger->range);
-		shuffle_z(aoi_ctx, &trigger->node[3], z + trigger->range);
+		trigger->node[1].shuffle(aoi_ctx, &trigger->node[1], z - trigger->range);
+		trigger->node[3].shuffle(aoi_ctx, &trigger->node[3], z + trigger->range);
 	}
 
 	aoi_object_t* owner = trigger->node[0].owner;
 	for (aoi_object_t* node = aoi_ctx->enter_list.next; node != &aoi_ctx->enter_list; ) {
 		owner->trigger_enter_func(owner->uid, node->uid, ud);
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_put(node->entity->witness, owner->uid);
-#endif // LINKAOI_CHECK_WITNESS
+#endif // LINKAOI_HAVE_RESTORE_WITNESS
 
-#ifdef LINKAOI_CHECK_VISIBLE
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 		hash_set_put(owner->trigger->visible, node->uid);
 #endif
 		aoi_object_t* tmp = node;
@@ -402,10 +435,10 @@ static void shuffle_trigger(aoi_context_t* aoi_ctx, aoi_trigger_t* trigger, int 
 
 	for (aoi_object_t* node = aoi_ctx->leave_list.next; node != &aoi_ctx->leave_list; ) {
 		owner->trigger_leave_func(owner->uid, node->uid, ud);
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 		hash_set_del(node->entity->witness, owner->uid);
-#endif // LINKAOI_CHECK_WITNESS
-#ifdef LINKAOI_CHECK_VISIBLE
+#endif // LINKAOI_HAVE_RESTORE_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 		hash_set_del(owner->trigger->visible, node->uid);
 #endif
 		aoi_object_t* tmp = node;
@@ -427,7 +460,7 @@ int create_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z
 	aoi_object->entity_enter_func = enter_func;
 	aoi_object->entity_leave_func = leave_func;
 
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 	aoi_object->entity->witness = hash_set_new();
 #endif
 	aoi_object->entity->center.x = UNLIMITED;
@@ -438,6 +471,9 @@ int create_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int z
 
 	aoi_object->entity->node[0].flag |= AOI_ENTITY;
 	aoi_object->entity->node[1].flag |= AOI_ENTITY;
+
+	aoi_object->entity->node[0].shuffle = entity_shuffle_x;
+	aoi_object->entity->node[1].shuffle = entity_shuffle_z;
 
 	aoi_object->entity->node[0].order = 0;
 	aoi_object->entity->node[1].order = 0;
@@ -462,7 +498,7 @@ int create_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int 
 	aoi_object->trigger = malloc(sizeof(aoi_trigger_t));
 	memset(aoi_object->trigger, 0, sizeof(aoi_trigger_t));
 
-#ifdef LINKAOI_CHECK_VISIBLE
+#ifdef LINKAOI_HAVE_RESTORE_VISIBLE
 	aoi_object->trigger->visible = hash_set_new();
 #endif
 
@@ -478,6 +514,11 @@ int create_trigger(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int x, int 
 	aoi_object->trigger->node[1].owner = aoi_object;
 	aoi_object->trigger->node[2].owner = aoi_object;
 	aoi_object->trigger->node[3].owner = aoi_object;
+
+	aoi_object->trigger->node[0].shuffle = trigger_low_bound_shuffle_x;
+	aoi_object->trigger->node[1].shuffle = trigger_low_bound_shuffle_z;
+	aoi_object->trigger->node[2].shuffle = trigger_high_bound_shuffle_x;
+	aoi_object->trigger->node[3].shuffle = trigger_high_bound_shuffle_z;
 
 	aoi_object->trigger->node[0].flag |= AOI_LOW_BOUND;
 	aoi_object->trigger->node[1].flag |= AOI_LOW_BOUND;
@@ -526,7 +567,7 @@ int delete_entity(aoi_context_t* aoi_ctx, aoi_object_t* aoi_object, int shuffle,
 	remove_node(&aoi_object->entity->node[0]);
 	remove_node(&aoi_object->entity->node[1]);
 
-#ifdef LINKAOI_CHECK_WITNESS
+#ifdef LINKAOI_HAVE_RESTORE_WITNESS
 	hash_set_free(aoi_object->entity->witness);
 #endif
 	free(aoi_object->entity);

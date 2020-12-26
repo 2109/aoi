@@ -22,6 +22,9 @@ int delete_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object);
 void move_entity(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, void* ud);
 void move_trigger(struct aoi_context* aoi_ctx, struct aoi_object* aoi_object, int x, int z, void* ud);
 
+void get_witness(struct aoi_context* aoi_ctx, int id, callback_func, void* ud);
+void get_visible(struct aoi_context* aoi_ctx, int id, callback_func, void* ud);
+
 void foreach_aoi_entity(struct aoi_context* aoi_ctx, foreach_entity_func func, void* ud);
 void foreach_aoi_trigger(struct aoi_context* aoi_ctx, foreach_trigger_func func, void* ud);
 
