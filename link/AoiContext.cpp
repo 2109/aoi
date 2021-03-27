@@ -67,10 +67,10 @@ void AoiContext::DeRefEntity(int uid) {
 
 void AoiContext::Update(float interval) {
 	std::map<int, Aoi*>::iterator iter = m_entity_list.begin();
-	for (; iter != m_entity_list.end(); iter++) {
+	/*for (; iter != m_entity_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Update(interval);
-	}
+	}*/
 
 	iter = m_trigger_list.begin();
 	for (; iter != m_trigger_list.end(); iter++) {
@@ -80,7 +80,7 @@ void AoiContext::Update(float interval) {
 }
 
 void AoiContext::Draw() {
-	std::map<int, Aoi*>::iterator iter = m_entity_list.begin();
+	/*std::map<int, Aoi*>::iterator iter = m_entity_list.begin();
 	for (; iter != m_entity_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Draw();
@@ -90,5 +90,5 @@ void AoiContext::Draw() {
 	for (; iter != m_trigger_list.end(); iter++) {
 		Aoi* aoi = iter->second;
 		aoi->Draw();
-	}
+	}*/
 }

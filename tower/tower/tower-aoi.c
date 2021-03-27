@@ -198,7 +198,7 @@ int create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* 
 			hash_set_put(entity->witness, other->uid, entity->uid, "entity witness");
 			hash_set_put(other->visible, entity->uid, other->uid, "trigger visible");
 		}
-	});
+		});
 
 	return entity->id;
 }
@@ -220,7 +220,7 @@ void remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 			func(entity->uid, other->uid, ud);
 			hash_set_del(entity->witness, other->uid, entity->uid, "entity witness");
 		}
-	});
+		});
 
 	free_object(aoi, entity);
 	return;
@@ -260,7 +260,7 @@ void move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, 
 		if (other->uid != entity->uid) {
 			list_add(&leave, other);
 		}
-	});
+		});
 
 	hash_foreach(ntower->hash, k, other, {
 		if (other->uid != entity->uid) {
@@ -270,7 +270,7 @@ void move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, 
 				list_add(&enter, other);
 			}
 		}
-	});
+		});
 
 	object_t* cursor = leave.next;
 	for (; cursor != &leave;) {
@@ -438,8 +438,8 @@ aoi_t* create_aoi(int max, int width, int height, int cell) {
 
 	aoi_ctx->max = max;
 
-	aoi_ctx->pool = malloc(sizeof(object_t)* aoi_ctx->max);
-	memset(aoi_ctx->pool, 0, sizeof(object_t)* aoi_ctx->max);
+	aoi_ctx->pool = malloc(sizeof(object_t) * aoi_ctx->max);
+	memset(aoi_ctx->pool, 0, sizeof(object_t) * aoi_ctx->max);
 
 	aoi_ctx->width = width;
 	aoi_ctx->height = height;
@@ -494,7 +494,7 @@ void get_witness(struct aoi* aoi, int id, callback_func func, void* ud) {
 		if (other->uid != entity->uid) {
 			func(other->uid, ud);
 		}
-	});
+		});
 }
 
 void get_visible(struct aoi* aoi, int id, callback_func func, void* ud) {

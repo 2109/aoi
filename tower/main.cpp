@@ -31,11 +31,11 @@ int main() {
 
 	AoiContext* context = new AoiContext(width, height, 10);
 	g_context = context;
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 2000; i++) {
 		context->CreateEntity();
 	}
 
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 100; i++) {
 		context->CreateTrigger();;
 	}
 
