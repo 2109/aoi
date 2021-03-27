@@ -1,3 +1,19 @@
 ﻿  tower_aoi.cpp
-E:\git\aoi\aoi\tower_aoi.cpp(14): error C4716: “TowerAOI::CreateTrigger”: 必须返回一个值
-E:\git\aoi\aoi\tower_aoi.cpp(6): error C4716: “TowerAOI::CreateEntity”: 必须返回一个值
+E:\git\aoi\aoi\tower_aoi.h(63,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+E:\git\aoi\aoi\tower_aoi.h(64,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+E:\git\aoi\aoi\tower_aoi.cpp(9,13): warning C4018: “>”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(9,25): warning C4018: “>”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(31,26): warning C4018: “>=”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(34,30): warning C4018: “>=”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(39,26): warning C4018: “>=”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(52,26): warning C4018: “>=”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(55,30): warning C4018: “>=”: 有符号/无符号不匹配
+E:\git\aoi\aoi\tower_aoi.cpp(60,26): warning C4018: “>=”: 有符号/无符号不匹配
+  tower_entity.cpp
+E:\git\aoi\aoi\tower_aoi.h(63,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+E:\git\aoi\aoi\tower_aoi.h(64,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+  tower_trigger.cpp
+E:\git\aoi\aoi\tower_aoi.h(63,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+E:\git\aoi\aoi\tower_aoi.h(64,20): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+  正在生成代码...
+  aoi.vcxproj -> E:\git\aoi\Debug\aoi.lib

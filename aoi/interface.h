@@ -3,10 +3,18 @@
 
 struct IAOIEntity {
 	virtual void Move(float x, float z) = 0;
+	
+	virtual void Enter(float x, float z) = 0;
+
+	virtual void Leave() = 0;
 };
 
 struct IAOITrigger {
 	virtual void Move(float x, float z) = 0;
+
+	virtual void Enter(float x, float z) = 0;
+
+	virtual void Leave() = 0;
 
 	virtual void OnEnter(IAOIEntity* entity) = 0;
 
@@ -14,11 +22,13 @@ struct IAOITrigger {
 };
 
 struct IAOI {
-	virtual IAOIEntity* AddEntity(IAOIEntity* entity) = 0;
-	virtual void RemoveEntity(IAOIEntity* entity) = 0;
+	virtual int AddEntity(IAOIEntity* entity) = 0;
+	virtual int RemoveEntity(IAOIEntity* entity) = 0;
+	virtual int MoveEntity(IAOIEntity* entity, float x, float z) = 0;
 
-	virtual IAOITrigger* AddTrigger(IAOITrigger* entity) = 0;
-	virtual void RemoveTrigger(IAOITrigger* entity) = 0;
+	virtual int AddTrigger(IAOITrigger* entity) = 0;
+	virtual int RemoveTrigger(IAOITrigger* entity) = 0;
+	virtual int MoveTrigger(IAOIEntity* entity, float x, float z) = 0;
 };
 
 #endif
