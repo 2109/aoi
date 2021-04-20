@@ -83,7 +83,7 @@ namespace AOI {
 		}
 
 		int AOI::AddEntity(Entity* entity) {
-			if (ValidPos(entity->pos_) < 0) {
+			if (IsValid(entity->pos_) < 0) {
 				return -1;
 			}
 			Tower* tower = GetTower(entity->pos_);
@@ -123,7 +123,7 @@ namespace AOI {
 
 		int AOI::MoveEntity(Entity* entity, float x, float z) {
 			float p[2] = { x, z };
-			if (ValidPos(p) < 0) {
+			if (IsValid(p) < 0) {
 				return -1;
 			}
 
@@ -174,7 +174,7 @@ namespace AOI {
 		}
 
 		int AOI::AddTrigger(Trigger* trigger) {
-			if (ValidPos(trigger->pos_) < 0) {
+			if (IsValid(trigger->pos_) < 0) {
 				return -1;
 			}
 
@@ -225,7 +225,7 @@ namespace AOI {
 
 		int AOI::MoveTrigger(Trigger* trigger, float x, float z) {
 			float p[2] = { x, z };
-			if (ValidPos(p) < 0) {
+			if (IsValid(p) < 0) {
 				return -1;
 			}
 

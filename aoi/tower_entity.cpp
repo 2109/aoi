@@ -10,8 +10,7 @@ namespace AOI {
 			aoi_ = NULL;
 			uid_ = 0;
 			mask_ = 0;
-			pos_[0] = 0;
-			pos_[1] = 0;
+			pos_[0] = pos_[1] = 0;
 		}
 
 		Entity::Entity(AOI* aoi, int uid, uint8_t mask) {
@@ -19,8 +18,7 @@ namespace AOI {
 			aoi_ = aoi;
 			uid_ = uid;
 			mask_ = mask;
-			pos_[0] = 0;
-			pos_[1] = 0;
+			pos_[0] = pos_[1] = 0;
 		}
 
 		void Entity::Move(float x, float z) {

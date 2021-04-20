@@ -17,8 +17,8 @@
 #define TYPE_ENTITY 	0
 #define TYPE_TRIGGER  	1
 
-#define RESTORE_WITNESS
-#define RESTORE_VISIBLE
+//#define RESTORE_WITNESS
+//#define RESTORE_VISIBLE
 
 typedef struct location {
 	float x;
@@ -189,15 +189,24 @@ int create_entity(aoi_t* aoi, int uid, float x, float z, enter_func func, void* 
 
 	list_add(&tower->head, entity);
 
+#ifdef RESTORE_WITNESS
 	entity->witness = hash_set_new();
+#endif
 	khiter_t k;
 	object_t* other;
 	hash_foreach(tower->hash, k, other, {
 		if (other->uid != entity->uid) {
 			func(entity->uid, other->uid, ud);
-			hash_set_put(entity->witness, other->uid, entity->uid, "entity witness");
-			hash_set_put(other->visible, entity->uid, other->uid, "trigger visible");
 		}
+
+//#ifdef RESTORE_WITNESS
+//			hash_set_put(entity->witness, other->uid, entity->uid, "entity witness");
+//#endif
+//
+//#ifdef RESTORE_VISIBLE
+//			hash_set_put(other->visible, entity->uid, other->uid, "trigger visible");
+//#endif
+		
 		});
 
 	return entity->id;
@@ -218,7 +227,9 @@ void remove_entity(aoi_t* aoi, int id, leave_func func, void* ud) {
 	hash_foreach(tower->hash, k, other, {
 		if (other->uid != entity->uid) {
 			func(entity->uid, other->uid, ud);
-			hash_set_del(entity->witness, other->uid, entity->uid, "entity witness");
+//#ifdef RESTORE_WITNESS
+//			hash_set_del(entity->witness, other->uid, entity->uid, "entity witness");
+//#endif
 		}
 		});
 
@@ -278,8 +289,12 @@ void move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, 
 		leave_func(entity->uid, obj->uid, leave_ud);
 		cursor = cursor->next;
 		obj->next = obj->prev = NULL;
+#ifdef RESTORE_WITNESS
 		hash_set_del(entity->witness, obj->uid, entity->uid, "entity witness");
+#endif
+#ifdef RESTORE_VISIBLE
 		hash_set_del(obj->visible, entity->uid, obj->uid, "trigger visible");
+#endif
 	}
 
 	cursor = enter.next;
@@ -288,8 +303,12 @@ void move_entity(aoi_t* aoi, int id, float nx, float nz, enter_func enter_func, 
 		cursor = cursor->next;
 		enter_func(entity->uid, obj->uid, enter_ud);
 		obj->next = obj->prev = NULL;
+#ifdef RESTORE_WITNESS
 		hash_set_put(entity->witness, obj->uid, entity->uid, "entity witness");
+#endif
+#ifdef RESTORE_VISIBLE
 		hash_set_put(obj->visible, entity->uid, obj->uid, "trigger visible");
+#endif
 	}
 }
 
@@ -297,7 +316,9 @@ int create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func 
 	assert_position(aoi, x, z);
 
 	object_t* trigger = new_object(aoi, uid, TYPE_TRIGGER, x, z);
+#ifdef RESTORE_VISIBLE
 	trigger->visible = hash_set_new();
+#endif
 
 	trigger->range = range;
 
@@ -319,8 +340,12 @@ int create_trigger(aoi_t* aoi, int uid, float x, float z, int range, enter_func 
 			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					func(trigger->uid, cursor->uid, ud);
+#ifdef RESTORE_WITNESS
 					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+#endif
+#ifdef RESTORE_VISIBLE
 					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
+#endif
 
 				}
 			}
@@ -387,8 +412,12 @@ void move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void
 			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					leave(trigger->uid, cursor->uid, leave_ud);
+#ifdef RESTORE_WITNESS
 					hash_set_del(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+#endif
+#ifdef RESTORE_VISIBL
 					hash_set_del(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
+#endif
 				}
 			}
 		}
@@ -409,8 +438,12 @@ void move_trigger(aoi_t* aoi, int id, float nx, float nz, enter_func enter, void
 			for (; cursor != &tower->head; cursor = cursor->next) {
 				if (cursor->uid != trigger->uid) {
 					enter(trigger->uid, cursor->uid, enter_ud);
+#ifdef RESTORE_WITNESS
 					hash_set_put(cursor->witness, trigger->uid, cursor->uid, "entity witness");
+#endif
+#ifdef RESTORE_VISIBL
 					hash_set_put(trigger->visible, cursor->uid, trigger->uid, "trigger visible");
+#endif
 				}
 			}
 		}

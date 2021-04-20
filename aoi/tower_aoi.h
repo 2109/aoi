@@ -45,14 +45,14 @@ namespace AOI {
 
 			uint32_t w_;
 			uint32_t h_;
-			uint32_t cell_;
-			Tower** towers_;
 			uint32_t tw_;
 			uint32_t th_;
+			uint32_t cell_;
+			Tower** towers_;
 
 			AOI(uint32_t w, uint32_t h, int cell);
 
-			inline int ValidPos(float* pos) {
+			inline int IsValid(float* pos) {
 				if (pos[0] < 0 || pos[1] < 0 || pos[0] > w_ || pos[1] > h_) {
 					return -1;
 				}

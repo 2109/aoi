@@ -16,8 +16,8 @@
 #define IN -1
 #define OUT 1
 
-#define LINKAOI_HAVE_RESTORE_WITNESS
-#define LINKAOI_HAVE_RESTORE_VISIBLE
+//#define LINKAOI_HAVE_RESTORE_WITNESS
+//#define LINKAOI_HAVE_RESTORE_VISIBLE
 
 #ifdef _WIN32
 #define inline __inline

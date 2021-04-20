@@ -11,7 +11,7 @@ const GLfloat pi = 3.1415926536f;
 Aoi::Aoi(float x, float z, float speed, AoiContext* context) :m_pos(x, z) {
 	m_context = context;
 	m_speed = speed;
-	m_radius = 1;
+	m_radius = 5;
 	m_ref = 0;
 	m_id = context->m_countor++;
 	m_object = create_aoi_object(m_context->m_context, m_id);
